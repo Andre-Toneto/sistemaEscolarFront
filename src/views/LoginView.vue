@@ -37,17 +37,31 @@
   </v-container>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from "vue"
 import { useRouter } from "vue-router"
-import { login } from "@/services/auth.services"
+import { login } from "@/services/auth.service"
 
 const email = ref("")
 const password = ref("")
+const error = ref("")
+const loading = ref(false)
+
 const router = useRouter()
 
 async function handleLogin() {
-  await login(email.value, password.value)
-  router.push("/dashboard")
+  try {
+    loading.value = true
+    error.value = ""
+
+    await login(email.value, password.value)
+
+    router.push("/dashboard")
+
+  } catch (err: any) {
+    error.value = err.response?.data?.message || "Erro ao fazer login"
+  } finally {
+    loading.value = false
+  }
 }
 </script>

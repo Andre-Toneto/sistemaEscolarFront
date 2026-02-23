@@ -1,10 +1,14 @@
 <template>
   <v-app>
-    <router-view />
+    <AppToolbar />
+    <AppNavigation />
+    <v-main>
+      <router-view />
+    </v-main>
   </v-app>
 </template>
 
 <script setup>
-// App raiz deve ser simples.
-// Layouts ficam nas views ou em componentes de layout.
+import AppToolbar from '@/components/appToolbar/index.vue'
+import AppNavigation from '@/components/appNavigation/index.vue'
 </script>
