@@ -20,8 +20,7 @@
     <!-- Navigation Items -->
     <v-list density="comfortable" nav class="pa-2">
       <v-list-item
-        v-for="item in navItems"
-        v-show="item.route !== 'admin' || isAdmin"
+        v-for="item in filteredNavItems"
         :key="item.text"
         :to="`/${item.route}`"
         rounded="xl"
@@ -32,14 +31,9 @@
         </template>
         <v-list-item-title class="font-weight-medium">{{ item.text }}</v-list-item-title>
         <template v-slot:append>
-          <v-chip v-if="item.route && item.route.includes('encaminhamentos')" size="x-small" color="senai-red" text-color="white">
+          <v-chip v-if="item.route && item.route.includes('encaminhamentos') && pendingTotal > 0" size="x-small" color="senai-red" text-color="white">
             {{ pendingTotal }}
           </v-chip>
-          <template v-else-if="item.badge">
-            <v-chip size="x-small" color="senai-red" text-color="white">
-              {{ item.badge }}
-            </v-chip>
-          </template>
         </template>
       </v-list-item>
     </v-list>
@@ -60,76 +54,38 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
-// import { db } from '@/services/firebase.js'
-// import { collection, query, where, getDocs, onSnapshot } from 'firebase/firestore'
+import { useAuthStore } from '@/store/auth'
 
 const route = useRoute()
+const authStore = useAuthStore()
 const navigationWidth = ref(280)
 const pendingTotal = ref(0)
 
+const isAdmin = computed(() => authStore.isAdmin)
+
 const navItems = [
+  { text: 'Início', route: 'home', icon: 'mdi-home' },
   { text: 'Carômetro', route: 'carometro', icon: 'mdi-account-group'},
   { text: 'Encaminhamentos', route: 'encaminhamentos/abertos', icon: 'mdi-send' },
-  { text: 'Mapa de Sala', route: 'mapa-sala', icon: 'mdi-floor-plan' },
-  // { text: 'Formulários', route: 'formularios', icon: 'mdi-form-select' },
-  { text: 'Calendário Escolar', route: 'calendario-escolar', icon: 'mdi-calendar' },
-  { text: 'Administração', route: 'admin', icon: 'mdi-cog' }
+  { text: 'Usuários', route: 'users', icon: 'mdi-account-cog', adminOnly: true },
+  { text: 'Administração', route: 'admin', icon: 'mdi-cog', adminOnly: true }
 ]
 
-const isSecretaria = ref(false)
-const isAdmin = ref(false)
-
-let _unsub = null
-
-const setupListeners = () => {
-  // teardown previous
-  if (typeof _unsub === 'function') { _unsub(); _unsub = null }
-  try {
-    const user = JSON.parse(sessionStorage.getItem('carometro_user') || '{}')
-    const role = String(user?.tipo_usuario || '').toLowerCase()
-    isSecretaria.value = role === 'secretaria'
-    isAdmin.value = role === 'admin'
-
-    const coll = collection(db, 'encaminhamentos')
-
-    if (isSecretaria.value || isAdmin.value) {
-      const q = query(coll, where('status', '==', 'aberto'))
-      _unsub = onSnapshot(q, (snap) => {
-        pendingTotal.value = snap.size
-      }, () => { pendingTotal.value = 0 })
-    } else {
-      const userReg = String(user?.registro || '')
-      if (!userReg) { pendingTotal.value = 0; return }
-      const q = query(coll, where('status', '==', 'finalizado'), where('createdByReg', '==', userReg))
-      _unsub = onSnapshot(q, (snap) => {
-        // Option 1: count all finalized items created by the user
-        pendingTotal.value = snap.size
-      }, () => { pendingTotal.value = 0 })
-    }
-  } catch (e) {
-    pendingTotal.value = 0
-  }
-}
+// Filtrar itens por permissão
+const filteredNavItems = computed(() => {
+  return navItems.filter(item => !item.adminOnly || isAdmin.value)
+})
 
 onMounted(() => {
   const updateWidth = () => { navigationWidth.value = window.innerWidth < 960 ? 260 : 280 }
 
   updateWidth()
   window.addEventListener('resize', updateWidth)
-  setupListeners()
-  const handler = () => setupListeners()
-  window.addEventListener('carometro-session-changed', handler)
-  window.addEventListener('visibilitychange', handler)
-  window.addEventListener('focus', handler)
 
   onUnmounted(() => {
     window.removeEventListener('resize', updateWidth)
-    window.removeEventListener('carometro-session-changed', handler)
-    window.removeEventListener('visibilitychange', handler)
-    window.removeEventListener('focus', handler)
-    if (typeof _unsub === 'function') { _unsub(); _unsub = null }
   })
 })
 
@@ -140,6 +96,6 @@ const getIconColor = (routeName) => {
 
 const openHelp = () => { 
   const url = `https://wa.me/5511973290206`
-    window.open(url, "_blank")
- }
+  window.open(url, "_blank")
+}
 </script>

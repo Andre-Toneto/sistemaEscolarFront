@@ -4,11 +4,11 @@
       <v-col cols="12">
         <v-card elevation="8" rounded="xl" class="pa-4 mb-4">
           <v-tabs v-model="tab" density="comfortable" color="senai-red">
-            <v-tab :to="{ name: 'Encaminhamentos', params: { status: 'abertos' } }" value="abertos">
+            <v-tab value="abertos" @click="changeTab('abertos')">
               <v-icon start>mdi-folder-open</v-icon>
               Abertos
             </v-tab>
-            <v-tab :to="{ name: 'Encaminhamentos', params: { status: 'finalizados' } }" value="finalizados">
+            <v-tab value="finalizados" @click="changeTab('finalizados')">
               <v-icon start>mdi-check-circle</v-icon>
               Finalizados
             </v-tab>
@@ -22,7 +22,7 @@
         <div v-if="!isSecretaria">
           <v-card elevation="8" rounded="xl" class="pa-4">
             <v-card-title class="text-h6 text-senai-red pa-0">Novo encaminhamento</v-card-title>
-            <v-card-subtitle class="mb-2">Preencha os dados ao lado para registrar um encaminhamento</v-card-subtitle>
+            <v-card-subtitle class="mb-2">Preencha os dados abaixo para registrar um encaminhamento</v-card-subtitle>
             <v-card-text>
               <v-form ref="formRef" v-model="formValid" @submit.prevent="criarEncaminhamento">
                 <v-text-field
@@ -50,7 +50,7 @@
                   <v-col cols="12" md="7">
                     <v-text-field
                       v-model="form.cursoNome"
-                      label="Nome do curso (ex: FIC - Microsoft Power BI)"
+                      label="Nome do curso"
                       variant="outlined"
                       density="comfortable"
                       prepend-inner-icon="mdi-book-open"
@@ -105,7 +105,7 @@
               <p class="text-body-2 text-medium-emphasis">A secretaria tem acesso a todos os encaminhamentos. </p>
               <p><strong>Pendentes:</strong> {{ counts.total }} </p>
               <div class="mt-2">
-                <v-chip v-for="ct in courseTypes" :key="ct" size="small" class="ma-1" v-if="ct !== 'Todos'">
+                <v-chip v-for="ct in courseTypes" :key="ct" size="small" class="ma-1">
                   {{ ct }} • {{ counts.byType[ct] || 0 }}
                 </v-chip>
               </div>
@@ -117,9 +117,9 @@
       <v-col cols="12" md="7">
         <v-card elevation="8" rounded="xl" class="pa-4">
           <v-card-title class="d-flex align-center justify-space-between">
-            <span class="text-h6 text-senai-red">Meus encaminhamentos — {{ tabLabel }}</span>
+            <span class="text-h6 text-senai-red">Encaminhamentos — {{ tabLabel }}</span>
             <div class="d-flex align-center">
-              <v-btn variant="text" color="senai-red" @click="carregar(true)">
+              <v-btn variant="text" color="senai-red" @click="carregar" :loading="loading">
                 <v-icon start>mdi-refresh</v-icon>
                 Atualizar
               </v-btn>
@@ -128,14 +128,14 @@
           <v-card-text>
             <div class="mb-3 d-flex align-center gap-2 flex-wrap">
               <v-chip
-                v-for="ct in courseTypes"
+                v-for="ct in ['Todos', ...courseTypes]"
                 :key="ct"
                 :color="selectedCourseType === ct ? 'senai-red' : 'default'"
                 :variant="selectedCourseType === ct ? 'flat' : 'outlined'"
                 size="small"
                 @click="selectedCourseType = ct"
               >
-                {{ ct }} <span v-if="counts.byType && counts.byType[ct]"> • {{ counts.byType[ct] }}</span>
+                {{ ct }} <span v-if="counts.byType && counts.byType[ct] && ct !== 'Todos'"> • {{ counts.byType[ct] }}</span>
               </v-chip>
             </div>
 
@@ -157,13 +157,13 @@
                   </v-avatar>
                 </template>
                 <v-list-item-title class="font-weight-medium">
-                  {{ e.aluno }} • {{ e.courseType || e.curso }} • {{ e.cursoNome || e.curso }} • {{ e.turma }}
+                  {{ e.aluno }} • {{ e.courseType }} • {{ e.cursoNome }} • {{ e.turma }}
                 </v-list-item-title>
                 <v-list-item-subtitle>
                   <div><span class="text-medium-emphasis">Motivo: </span>{{ e.motivo }}</div>
                   <div class="text-caption">
-                    Criado por: {{ e.createdByName || e.createdBy }}
-                    <span v-if="e.finalizedByName"> �� Finalizado por: {{ e.finalizedByName }} em {{ e.finalizedAt ? new Date(e.finalizedAt).toLocaleString() : '' }}</span>
+                    Criado por: {{ e.createdByName || 'N/A' }}
+                    <span v-if="e.finalizedByName"> • Finalizado por: {{ e.finalizedByName }} em {{ e.finalizedAt ? new Date(e.finalizedAt).toLocaleString() : '' }}</span>
                     <span v-else-if="e.status === 'finalizado'"> • Finalizado</span>
                   </div>
                   <div v-if="e.response" class="mt-1"><strong>Resposta (Secretaria):</strong> {{ e.response }}</div>
@@ -184,7 +184,7 @@
                       <v-icon>mdi-delete</v-icon>
                     </v-btn>
 
-                    <v-btn v-if="tab === 'abertos' && user.tipo_usuario && user.tipo_usuario.toLowerCase() === 'secretaria'" size="small" color="success" variant="outlined" @click.stop="abrirFinalizar(e)">
+                    <v-btn v-if="tab === 'abertos' && isSecretaria" size="small" color="success" variant="outlined" @click.stop="abrirFinalizar(e)">
                       <v-icon start size="small">mdi-check</v-icon>
                       Finalizar (Secretaria)
                     </v-btn>
@@ -202,6 +202,7 @@
       </v-col>
     </v-row>
 
+    <!-- Dialogs remain similar but use new services -->
     <v-dialog v-model="editAberto" max-width="720">
       <v-card rounded="lg">
         <v-card-title>Editar encaminhamento</v-card-title>
@@ -253,20 +254,19 @@
       </v-card>
     </v-dialog>
 
-    <!-- Visualizar detalhes -->
     <v-dialog v-model="viewAberto" max-width="720">
       <v-card>
         <v-card-title>Detalhes do encaminhamento</v-card-title>
         <v-card-text>
           <div v-if="viewItem">
             <p><strong>Aluno:</strong> {{ viewItem.aluno }}</p>
-            <p><strong>Curso:</strong> {{ viewItem.courseType || viewItem.curso }} - {{ viewItem.cursoNome || '' }}</p>
+            <p><strong>Curso:</strong> {{ viewItem.courseType }} - {{ viewItem.cursoNome }}</p>
             <p><strong>Turma:</strong> {{ viewItem.turma }}</p>
             <p><strong>Motivo:</strong> {{ viewItem.motivo }}</p>
             <p><strong>Descrição:</strong><br/>{{ viewItem.descricao }}</p>
             <p v-if="viewItem.response"><strong>Resposta (Secretaria):</strong><br/>{{ viewItem.response }}</p>
-            <p class="text-caption">Criado por: {{ viewItem.createdByName || viewItem.createdByReg }} em {{ viewItem.createdAt ? new Date(viewItem.createdAt).toLocaleString() : '' }}</p>
-            <p v-if="viewItem.finalizedAt" class="text-caption">Finalizado por: {{ viewItem.finalizedByName || viewItem.finalizedByReg }} em {{ viewItem.finalizedAt ? new Date(viewItem.finalizedAt).toLocaleString() : '' }}</p>
+            <p class="text-caption">Criado por: {{ viewItem.createdByName }} em {{ viewItem.createdAt ? new Date(viewItem.createdAt).toLocaleString() : '' }}</p>
+            <p v-if="viewItem.finalizedAt" class="text-caption">Finalizado por: {{ viewItem.finalizedByName }} em {{ viewItem.finalizedAt ? new Date(viewItem.finalizedAt).toLocaleString() : '' }}</p>
           </div>
         </v-card-text>
         <v-card-actions>
@@ -283,13 +283,13 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
-// import { db } from '@/services/firebase.js'
-// import { collection, addDoc, query, where, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore'
+import { useRoute, useRouter } from 'vue-router'
+import * as encaminhamentosService from '@/services/encaminhamentos.services'
 
 const route = useRoute()
+const router = useRouter()
 
-const courseTypes = ['FIC','CAI','Técnico']
+const courseTypes = ['FIC', 'CAI', 'Técnico']
 
 const tab = ref('abertos')
 const selectedCourseType = ref('Todos')
@@ -306,119 +306,59 @@ const snack = ref({ open: false, msg: '' })
 
 const user = ref({})
 const loadUser = () => {
-  try { user.value = JSON.parse(sessionStorage.getItem('carometro_user') || '{}') } catch { user.value = {} }
+  try {
+    const userData = localStorage.getItem('user')
+    user.value = userData ? JSON.parse(userData) : {}
+  } catch {
+    user.value = {}
+  }
 }
 
-const coll = collection(db, 'encaminhamentos')
-
 const items = ref([])
-
 const counts = ref({ total: 0, byType: {} })
 
-const isSecretaria = computed(() => (String(user.value?.tipo_usuario || '').toLowerCase() === 'secretaria'))
+const isSecretaria = computed(() => (String(user.value?.role || '').toLowerCase() === 'secretaria'))
 
-const computeCounts = async (status = 'aberto') => {
+const carregar = async () => {
+  loading.value = true
   try {
-    const collRef = collection(db, 'encaminhamentos')
-    const userReg = String(user.value?.registro || '')
-    const sec = isSecretaria.value
+    const status = tab.value === 'abertos' ? 'aberto' : 'finalizado'
+    const type = selectedCourseType.value === 'Todos' ? undefined : selectedCourseType.value
 
-    // total for status
-    let totalSnap
-    if (sec) {
-      totalSnap = await getDocs(query(collRef, where('status', '==', status)))
+    const data = await encaminhamentosService.getEncaminhamentos(status, type)
+    // Handle both {items, counts} and direct array responses
+    items.value = Array.isArray(data) ? data : (data.items || [])
+
+    if (Array.isArray(data)) {
+      // Calculate simple counts from array
+      const byType = {}
+      data.forEach(item => {
+        const t = item.courseType || 'Outros'
+        byType[t] = (byType[t] || 0) + 1
+      })
+      counts.value = { total: data.length, byType }
     } else {
-      totalSnap = await getDocs(query(collRef, where('status', '==', status), where('createdByReg', '==', userReg)))
+      counts.value = data.counts || { total: 0, byType: {} }
     }
-    counts.value.total = totalSnap.size
 
-    // per type for status
-    const byType = {}
-    for (const t of courseTypes) {
-      if (t === 'Todos') continue
-      let snap
-      if (sec) {
-        snap = await getDocs(query(collRef, where('status', '==', status), where('courseType', '==', t)))
-      } else {
-        snap = await getDocs(query(collRef, where('status', '==', status), where('createdByReg', '==', userReg), where('courseType', '==', t)))
-      }
-      byType[t] = snap.size
-    }
-    counts.value.byType = byType
   } catch (e) {
-    counts.value = { total: 0, byType: {} }
+    console.error('Falha ao carregar encaminhamentos:', e)
+    snack.value = { open: true, msg: 'Falha ao carregar encaminhamentos.' }
+    items.value = []
+  } finally {
+    loading.value = false
   }
+}
+
+const changeTab = (v) => {
+  tab.value = v
+  carregar()
 }
 
 // View dialog state
 const viewAberto = ref(false)
 const viewItem = ref(null)
 const abrirDetalhes = (e) => { viewItem.value = e; viewAberto.value = true }
-
-const carregar = async (force = false) => {
-  loading.value = true
-  try {
-    const status = tab.value === 'abertos' ? 'aberto' : 'finalizado'
-    // Build query depending on role (secretaria sees all)
-    let q
-    const isSecretaria = (user.value?.tipo_usuario || '').toLowerCase() === 'secretaria'
-    if (isSecretaria) {
-      q = query(coll, where('status', '==', status))
-    } else {
-      q = query(coll, where('createdByReg', '==', String(user.value?.registro || '')),
-                where('status', '==', status))
-    }
-    const snap = await getDocs(q)
-    const out = []
-    snap.forEach(d => out.push({ id: d.id, ...(d.data() || {}) }))
-
-    // Client-side filter by courseType
-    let filtered = out
-    if (selectedCourseType.value && selectedCourseType.value !== 'Todos') {
-      filtered = filtered.filter(i => String(i.courseType || (i.curso || '')).toLowerCase() === String(selectedCourseType.value).toLowerCase())
-    }
-    // Sort by createdAt desc locally
-    filtered.sort((a, b) => {
-      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0
-      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0
-      return tb - ta
-    })
-    items.value = filtered
-    await computeCounts(status)
-
-    // Owner notifications: notify creators when their items moved to finalizado and weren't yet notified
-    try {
-      const userReg = String(user.value?.registro || '')
-      if (userReg) {
-        const unnotified = filtered.filter(i => i.status === 'finalizado' && String(i.createdByReg || '') === userReg && !i.ownerNotified)
-        if (unnotified.length > 0) {
-          snack.value = { open: true, msg: `Você tem ${unnotified.length} encaminhamento(s) finalizado(s).` }
-          // mark as notified
-          await Promise.all(unnotified.map(u => updateDoc(doc(db, 'encaminhamentos', String(u.id)), { ownerNotified: true }).catch(() => {})))
-        }
-      }
-    } catch (e) { console.warn('Falha ao notificar owner:', e) }
-
-    // Secretaria: notify about pending opens (only when count changes)
-    try {
-      const isSec = (user.value?.tipo_usuario || '').toLowerCase() === 'secretaria'
-      if (isSec) {
-        const prev = Number(sessionStorage.getItem('enc_pending_count') || '0')
-        const current = counts.value.total || 0
-        if (current > 0 && current !== prev) {
-          snack.value = { open: true, msg: `${current} encaminhamento(s) pendente(s)` }
-          sessionStorage.setItem('enc_pending_count', String(current))
-        }
-      }
-    } catch (e) { console.warn('Falha ao notificar secretaria:', e) }
-
-  } catch (e) {
-    console.warn('Falha ao carregar encaminhamentos:', e)
-    items.value = []
-  } finally {
-    loading.value = false
-  }
-}
 
 const editAberto = ref(false)
 const editForm = ref({})
@@ -432,25 +372,11 @@ const criarEncaminhamento = async () => {
   if (!formValid.value) return
   saving.value = true
   try {
-    const payload = {
-      aluno: String(form.value.aluno || '').trim(),
-      courseType: String(form.value.courseType || '').trim(),
-      cursoNome: String(form.value.cursoNome || '').trim(),
-      turma: String(form.value.turma || '').trim(),
-      motivo: String(form.value.motivo || '').trim(),
-      descricao: String(form.value.descricao || '').trim(),
-      status: 'aberto',
-      createdByReg: String(user.value?.registro || ''),
-      createdByName: String(user.value?.nome_completo || ''),
-      createdByRole: String(user.value?.tipo_usuario || ''),
-      createdAt: new Date().toISOString(),
-      updatedAt: null
-    }
-    await addDoc(coll, payload)
+    await encaminhamentosService.createEncaminhamento(form.value)
     form.value = { aluno: '', courseType: '', cursoNome: '', turma: '', motivo: '', descricao: '' }
     if (formRef.value?.resetValidation) formRef.value.resetValidation()
     snack.value = { open: true, msg: 'Encaminhamento criado.' }
-    await carregar(true)
+    await carregar()
   } catch (e) {
     console.error('Erro ao criar encaminhamento:', e)
     snack.value = { open: true, msg: 'Falha ao criar encaminhamento.' }
@@ -466,26 +392,12 @@ const abrirEdicao = (e) => {
 
 const salvarEdicao = async () => {
   if (!editForm.value || !editForm.value.id) return
-  if (!canEdit(editForm.value)) {
-    snack.value = { open: true, msg: 'Você não tem permissão para editar este encaminhamento.' }
-    return
-  }
   try {
     saving.value = true
-    const dref = doc(db, 'encaminhamentos', String(editForm.value.id))
-    const patch = {
-      aluno: String(editForm.value.aluno || '').trim(),
-      courseType: String(editForm.value.courseType || editForm.value.courseType || '').trim(),
-      cursoNome: String(editForm.value.cursoNome || '').trim(),
-      turma: String(editForm.value.turma || '').trim(),
-      motivo: String(editForm.value.motivo || '').trim(),
-      descricao: String(editForm.value.descricao || '').trim(),
-      updatedAt: new Date().toISOString()
-    }
-    await updateDoc(dref, patch)
+    await encaminhamentosService.updateEncaminhamento(editForm.value.id, editForm.value)
     editAberto.value = false
     snack.value = { open: true, msg: 'Encaminhamento atualizado.' }
-    await carregar(true)
+    await carregar()
   } catch (err) {
     console.error('Falha ao atualizar:', err)
     snack.value = { open: true, msg: 'Falha ao atualizar.' }
@@ -496,59 +408,43 @@ const confirmDelete = (e) => { toDelete.value = e; deleteConfirm.value = true }
 
 const executarDelete = async () => {
   if (!toDelete.value) return
-  if (!canEdit(toDelete.value)) {
-    snack.value = { open: true, msg: 'Você não tem permissão para excluir este encaminhamento.' }
-    deleteConfirm.value = false
-    return
-  }
   try {
-    const dref = doc(db, 'encaminhamentos', String(toDelete.value.id))
-    await deleteDoc(dref)
+    await encaminhamentosService.deleteEncaminhamento(toDelete.value.id)
     snack.value = { open: true, msg: 'Encaminhamento removido.' }
     deleteConfirm.value = false
     toDelete.value = null
-    await carregar(true)
+    await carregar()
   } catch (err) {
     console.error('Falha ao excluir:', err)
     snack.value = { open: true, msg: 'Falha ao excluir.' }
   }
 }
 
-const abrirFinalizar = (e) => { finalizeTarget.value = e; finalizeResponse.value = e.response || ''; finalizeDialog.value = true }
+const abrirFinalizar = (e) => { 
+  finalizeTarget.value = e
+  finalizeResponse.value = e.response || ''
+  finalizeDialog.value = true 
+}
 
 const canEdit = (e) => {
-  const t = (user.value?.tipo_usuario || '').toLowerCase()
+  const role = (user.value?.role || '').toLowerCase()
   if (!e) return false
-  // only admin or the original creator can edit/delete
-  if (t === 'admin') return true
-  return String(user.value?.registro || '') === String(e.createdByReg || '')
+  if (role === 'admin') return true
+  // Supondo que o backend retorna o criador ou que podemos comparar com o user logado
+  return String(user.value?.nif || '') === String(e.createdByNif || e.createdByReg || '')
 }
 
 const executarFinalizar = async () => {
   if (!finalizeTarget.value) return
-  const isSec = (user.value?.tipo_usuario || '').toLowerCase() === 'secretaria'
-  if (isSec && (!finalizeResponse.value || !finalizeResponse.value.trim())) {
+  if (isSecretaria.value && (!finalizeResponse.value || !finalizeResponse.value.trim())) {
     snack.value = { open: true, msg: 'Preencha a resposta antes de finalizar.' }
     return
   }
   try {
-    const dref = doc(db, 'encaminhamentos', String(finalizeTarget.value.id))
-    const patch = {
-      status: 'finalizado',
-      updatedAt: new Date().toISOString(),
-      finalizedByReg: String(user.value?.registro || ''),
-      finalizedByName: String(user.value?.nome_completo || ''),
-      finalizedAt: new Date().toISOString()
-    }
-    if (finalizeResponse.value) {
-      patch.response = String(finalizeResponse.value || '').trim()
-      patch.responseBy = String(user.value?.registro || '')
-      patch.responseAt = new Date().toISOString()
-    }
-    await updateDoc(dref, patch)
+    await encaminhamentosService.finalize(finalizeTarget.value.id, finalizeResponse.value)
     finalizeDialog.value = false
     snack.value = { open: true, msg: 'Encaminhamento finalizado.' }
-    await carregar(true)
+    await carregar()
   } catch (err) {
     console.error('Falha ao finalizar:', err)
     snack.value = { open: true, msg: 'Falha ao finalizar.' }
@@ -557,25 +453,16 @@ const executarFinalizar = async () => {
 
 const finalizar = async (e) => {
   try {
-    const dref = doc(db, 'encaminhamentos', String(e.id))
-    await updateDoc(dref, { status: 'finalizado', updatedAt: new Date().toISOString(), finalizedByReg: String(user.value?.registro || ''), finalizedByName: String(user.value?.nome_completo || ''), finalizedAt: new Date().toISOString() })
+    await encaminhamentosService.finalize(e.id)
     snack.value = { open: true, msg: 'Encaminhamento finalizado.' }
-    await carregar(true)
+    await carregar()
   } catch (err) {
     snack.value = { open: true, msg: 'Falha ao finalizar encaminhamento.' }
   }
 }
 
-
 onMounted(() => {
   loadUser()
-  const s = (route.params?.status === 'finalizados') ? 'finalizados' : 'abertos'
-  tab.value = s
-  carregar()
-})
-
-watch(() => route.params?.status, (v) => {
-  tab.value = (v === 'finalizados') ? 'finalizados' : 'abertos'
   carregar()
 })
 

@@ -1,0 +1,135 @@
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+
+export const isInvalid = (valor) => {
+  if (valor === null || valor === undefined) return true
+  if (typeof valor === 'number') return Number.isNaN(valor)
+  const s = String(valor).trim()
+  if (!s) return true
+  const lower = s.toLowerCase()
+  return lower === 'nan' || lower === 'undefined' || lower === 'null' || lower === 'invalid date'
+}
+
+export const safeValue = (valor) => {
+  return isInvalid(valor) ? 'Não informado' : String(valor).trim()
+}
+
+export const formatData = (valor) => {
+  if (isInvalid(valor)) return 'Não informado'
+  const s = String(valor).trim()
+
+  // Format ISO (YYYY-MM-DD)
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`
+
+  // Other formats via Date object
+  try {
+    const d = new Date(s)
+    if (isNaN(d.getTime())) return 'Não informado'
+    return d.toLocaleDateString('pt-BR')
+  } catch {
+    return 'Não informado'
+  }
+}
+
+export const buildCsv = (pessoa, curso, turma, items = []) => {
+  const sep = ','
+  const head = ['Nome','Curso','Matrícula','Tipo','Data','Descrição','Autor']
+  const linhas = [head.join(sep)]
+  
+  const nome = safeValue(pessoa?.nome)
+  const cursoNome = safeValue(curso?.nome || curso)
+  const mat = safeValue(pessoa?.matricula)
+  
+  items.forEach(o => {
+    const cols = [
+      nome,
+      cursoNome,
+      mat,
+      safeValue(o.tipo || 'Outro'),
+      formatData(o.data),
+      String(o.descricao || '').replace(/\r?\n|\r/g, ' ').replace(/"/g, '""'),
+      safeValue(o.autor)
+    ]
+    const escaped = cols.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v))
+    linhas.push(escaped.join(sep))
+  })
+  return linhas.join('\n')
+}
+
+export const exportOcorrenciasPDF = async (pessoa, curso, turma, itens) => {
+  const titulo = 'Histórico de Ocorrências'
+  const aluno = `${safeValue(pessoa?.nome)} - Matrícula: ${safeValue(pessoa?.matricula)} - ${safeValue(curso?.nome || curso)} - ${safeValue(turma?.nome || turma)}`
+
+  // Build a printable container
+  const container = document.createElement('div')
+  container.style.position = 'fixed'
+  container.style.left = '-10000px'
+  container.style.top = '0'
+  container.style.width = '1000px'
+  container.style.background = '#fff'
+  container.innerHTML = `
+    <div style="font-family: Arial, Helvetica, sans-serif; padding: 16px; color: #222;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+          <div style="font-size:18px; font-weight:700;">${titulo}</div>
+          <div style="color:#555;">${aluno}</div>
+        </div>
+        <div style="font-size:12px; color:#666;">Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <thead>
+          <tr>
+            <th style="border:1px solid #ddd; padding:8px; text-align:left; background:#f5f5f5">Tipo</th>
+            <th style="border:1px solid #ddd; padding:8px; text-align:left; background:#f5f5f5">Data</th>
+            <th style="border:1px solid #ddd; padding:8px; text-align:left; background:#f5f5f5">Autor</th>
+            <th style="border:1px solid #ddd; padding:8px; text-align:left; background:#f5f5f5">Descrição</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itens.length ? itens.map(o => `
+            <tr>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${safeValue(o.tipo || 'Outro')}</td>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${formatData(o.data)}</td>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${safeValue(o.autor)}</td>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${String(o.descricao || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+            </tr>
+          `).join('') : '<tr><td colspan="4" style="border:1px solid #ddd; padding:16px; text-align:center">Sem ocorrências</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `
+  document.body.appendChild(container)
+
+  try {
+    const canvas = await html2canvas(container, { scale: 2, useCORS: true })
+    const imgData = canvas.toDataURL('image/png')
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = pdf.internal.pageSize.getHeight()
+    const imgProps = pdf.getImageProperties(imgData)
+    const imgWidth = pdfWidth
+    const imgHeight = (imgProps.height * imgWidth) / imgProps.width
+    let position = 0
+
+    if (imgHeight <= pdfHeight) {
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+    } else {
+      let remainingHeight = imgHeight
+      while (remainingHeight > 0) {
+        pdf.addImage(imgData, 'PNG', 0, position * -1, imgWidth, imgHeight)
+        remainingHeight -= pdfHeight
+        position += pdfHeight
+        if (remainingHeight > 0) pdf.addPage()
+      }
+    }
+
+    const fileSafeName = aluno.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-]/g, '')
+    pdf.save(`${fileSafeName}_ocorrencias.pdf`)
+  } catch (e) {
+    console.error('Erro ao gerar PDF', e)
+    throw e
+  } finally {
+    try { document.body.removeChild(container) } catch {}
+  }
+}

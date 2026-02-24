@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router"
+import { useAuthStore } from "@/store/auth"
 import Home from "@/views/home/index.vue"
 import Encaminhamentos from "@/views/encaminhamentos/index.vue"
 import Login from "@/views/login.vue"
@@ -28,6 +29,11 @@ const routes = [
   {
     path: "/users",
     component: () => import("@/views/users/index.vue"),
+  },
+  {
+    path: "/admin",
+    component: () => import("@/views/admin/index.vue"),
+    meta: { requiresAuth: true, adminOnly: true }
   }
 ]
 
@@ -37,10 +43,12 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem("token")
+  const auth = useAuthStore()
 
-  if (to.meta.requiresAuth && !token) {
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
     next("/login")
+  } else if (to.meta.adminOnly && !auth.isAdmin) {
+    next("/home")
   } else {
     next()
   }
