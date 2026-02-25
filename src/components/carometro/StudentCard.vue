@@ -35,15 +35,15 @@
 
     <!-- Informações -->
     <v-card-title class="text-center text-capitalize text-h6 font-weight-bold text-senai-red px-4 pb-1 student-name" style="text-transform: capitalize !important;">
-      {{ capitalizeName(pessoa.name) }}
+      {{ capitalizeName(pessoa.name || pessoa.nome) }}
     </v-card-title>
 
     <!-- Badge de Status e Matrícula -->
     <div class="d-flex justify-center align-center text-center pb-4 gap-2">
       <div class="text-center d-flex">
         <div class="text-caption text-medium-emphasis mr-4">Matrícula:</div>
-        <div class="text-body-2 font-weight-medium" @click.stop="$emit('copy', pessoa.registration_number)">
-          {{ pessoa.registration_number }}
+        <div class="text-body-2 font-weight-medium" @click.stop="$emit('copy', pessoa.registration_number || pessoa.matricula)">
+          {{ pessoa.registration_number || pessoa.matricula }}
         </div>
       </div>
     </div>

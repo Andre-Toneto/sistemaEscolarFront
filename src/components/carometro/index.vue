@@ -72,6 +72,16 @@
       <p class="text-body-1 text-medium-emphasis mt-4">Carregando dados...</p>
     </div>
 
+    <!-- Erro -->
+    <div v-else-if="error" class="text-center py-12">
+      <v-icon size="80" color="error" class="mb-4">mdi-alert-circle</v-icon>
+      <h3 class="text-h6 text-error mb-2">Falha ao carregar alunos</h3>
+      <p class="text-body-2 text-medium-emphasis mb-6">{{ error }}</p>
+      <v-btn variant="outlined" color="primary" prepend-icon="mdi-refresh" @click="carregarAlunos">
+        Tentar Novamente
+      </v-btn>
+    </div>
+
     <!-- Lista vazia -->
     <div v-else-if="pessoas.length === 0" class="text-center py-12">
       <v-icon size="80" color="grey-lighten-2" class="mb-4">mdi-account-off</v-icon>
@@ -126,14 +136,16 @@ const emit = defineEmits(['selectPessoa', 'updateTotal'])
 
 const pessoas = ref([])
 const loading = ref(false)
+const error = ref(null)
 const termoBusca = ref('')
 
 const pessoasFiltradas = computed(() => {
+  if (!Array.isArray(pessoas.value)) return []
   if (!termoBusca.value) return pessoas.value
   const termo = termoBusca.value.toLowerCase().trim()
   return pessoas.value.filter(pessoa => {
-    const nome = pessoa.name?.toLowerCase() || ''
-    const matricula = pessoa.registration_number?.toString().toLowerCase() || ''
+    const nome = String(pessoa.name || pessoa.nome || '').toLowerCase()
+    const matricula = String(pessoa.registration_number || pessoa.matricula || '').toLowerCase()
     return nome.includes(termo) || matricula.includes(termo)
   })
 })
@@ -143,12 +155,14 @@ const filtroAtivo = computed(() => !!termoBusca.value)
 const carregarAlunos = async () => {
   if (!props.turma) return
   loading.value = true
+  error.value = null
   try {
     const alunos = await carometroService.getStudents(props.turma)
     pessoas.value = sortPessoas(alunos)
-    emit('updateTotal', pessoas.value.length)
-  } catch (error) {
-    console.error('Erro ao carregar alunos:', error)
+    emit('updateTotal', Array.isArray(pessoas.value) ? pessoas.value.length : 0)
+  } catch (err) {
+    console.error('Erro ao carregar alunos:', err)
+    error.value = err.message || 'Erro ao carregar alunos'
     pessoas.value = []
     emit('updateTotal', 0)
   } finally {
@@ -177,10 +191,16 @@ watch(() => props.turma, (newTurma) => {
 })
 
 const sortPessoas = (arr) => {
-  if (!Array.isArray(arr)) return arr
+  if (!Array.isArray(arr)) return []
   return [...arr].sort((a, b) => {
-    const na = String(a?.name || a?.registration_number || '').trim()
-    const nb = String(b?.name || b?.registration_number || '').trim()
+    // Busca por qualquer campo que possa conter o nome ou identificação
+    const na = String(a?.name || a?.nome || a?.registration_number || a?.matricula || '').trim().toLowerCase()
+    const nb = String(b?.name || b?.nome || b?.registration_number || b?.matricula || '').trim().toLowerCase()
+
+    if (!na && !nb) return 0
+    if (!na) return 1
+    if (!nb) return -1
+
     return na.localeCompare(nb, 'pt', { sensitivity: 'base' })
   })
 }

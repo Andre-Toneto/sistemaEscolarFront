@@ -9,7 +9,10 @@ import Carometro from "@/views/carometro/index.vue"
 const routes = [
   {
     path: "/",
-    redirect: "/home",
+    redirect: "/home"
+  },
+  {
+    path: "/home",
     component: Home
   },
   {

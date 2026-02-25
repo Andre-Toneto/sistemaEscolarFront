@@ -48,8 +48,14 @@ const vuetify = createVuetify({
   }
 })
 
-createApp(App)
-  .use(pinia)
-  .use(router)
-  .use(vuetify)
-  .mount("#app")
+const app = createApp(App)
+app.use(pinia)
+
+// Inicializar store de autenticação ANTES do router
+import { useAuthStore } from '@/store/auth'
+const authStore = useAuthStore()
+authStore.initializeStore()
+
+app.use(router)
+app.use(vuetify)
+app.mount("#app")

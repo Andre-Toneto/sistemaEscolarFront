@@ -26,6 +26,13 @@
         </v-col>
       </v-row>
 
+      <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
+        {{ error }}
+        <template v-slot:append>
+          <v-btn size="small" variant="text" @click="fetchStudents">Tentar Novamente</v-btn>
+        </template>
+      </v-alert>
+
       <v-table v-if="students.length > 0">
         <thead>
           <tr>
@@ -40,12 +47,12 @@
         </thead>
         <tbody>
           <tr v-for="student in students" :key="student.id">
-            <td>{{ student.registration_number }}</td>
-            <td>{{ student.name }}</td>
-            <td>{{ store.getClassName(student.class_id) }}</td>
+            <td>{{ student.registration_number || student.matricula || '---' }}</td>
+            <td>{{ student.name || student.nome || '---' }}</td>
+            <td>{{ store.getClassName(student.class_id || student.turma_id) }}</td>
             <td>{{ student.cpf }}</td>
             <td>{{ student.email }}</td>
-            <td>{{ student.position }}</td>
+            <td>{{ student.position || student.cargo }}</td>
             <td>
               <v-btn icon="mdi-pencil" variant="text" size="small" @click="openModal(student)"></v-btn>
               <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="confirmDelete(student)"></v-btn>
@@ -157,6 +164,7 @@ const filterClass = ref(null)
 const modal = ref(false)
 const editing = ref(null)
 const loading = ref(false)
+const error = ref(null)
 
 const form = ref({
   course_id: '',
@@ -188,10 +196,12 @@ const filteredClasses = computed(() => {
 
 const fetchStudents = async () => {
   loading.value = true
+  error.value = null
   try {
     students.value = await carometroService.getStudents(filterClass.value)
   } catch (err) {
     console.error('Error fetching students:', err)
+    error.value = err.message || 'Erro ao carregar alunos'
   } finally {
     loading.value = false
   }

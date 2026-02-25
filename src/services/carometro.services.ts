@@ -1,9 +1,42 @@
 import * as carometroApi from "@/api/carometro.api"
 
+// Helper para normalizar respostas da API de forma extremamente resiliente
+function normalizeResponse(response) {
+  if (!response || !response.data) return []
+  
+  const data = response.data
+  
+  // Se já for um array, retorna direto
+  if (Array.isArray(data)) return data
+  
+  if (data && typeof data === 'object') {
+    // Lista de chaves prováveis que contêm os dados reais
+    const priorityKeys = ['students', 'data', 'alunos', 'courses', 'classes', 'items', 'list', 'results']
+    
+    // 1. Procura nas chaves de prioridade no primeiro nível
+    for (const key of priorityKeys) {
+      if (Array.isArray(data[key])) return data[key]
+    }
+    
+    // 2. Procura nas chaves de prioridade dentro de um possível objeto 'data'
+    if (data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+      for (const key of priorityKeys) {
+        if (Array.isArray(data.data[key])) return data.data[key]
+      }
+    }
+    
+    // 3. Fallback: Procura por qualquer propriedade que seja um array no primeiro nível
+    const anyArrayKey = Object.keys(data).find(key => Array.isArray(data[key]))
+    if (anyArrayKey) return data[anyArrayKey]
+  }
+  
+  return []
+}
+
 // Courses
 export async function getCourses() {
   const response = await carometroApi.getCourses()
-  return response.data
+  return normalizeResponse(response)
 }
 
 export async function createCourse(data) {
@@ -24,7 +57,7 @@ export async function deleteCourse(id) {
 // Classes
 export async function getClasses(courseId?: string) {
   const response = await carometroApi.getClasses(courseId)
-  return response.data
+  return normalizeResponse(response)
 }
 
 export async function createClass(data) {
@@ -43,13 +76,9 @@ export async function archiveClass(id) {
 }
 
 export async function deleteClass(id) {
-  // Garantir a exclusão dos alunos antes de deletar a turma
-  // Isso resolve casos onde o banco de dados está apenas desvinculando os alunos (Set Null)
-  // em vez de deletá-los (Cascade Delete)
   try {
     const students = await getStudents(id)
     if (students && students.length > 0) {
-      console.log(`Limpando ${students.length} alunos da turma ${id} antes da exclusão...`)
       await Promise.all(students.map(s => deleteStudent(s.id)))
     }
   } catch (err) {
@@ -62,8 +91,26 @@ export async function deleteClass(id) {
 
 // Students
 export async function getStudents(classId?: string) {
-  const response = await carometroApi.getStudents(classId)
-  return response.data
+  try {
+    const response = await carometroApi.getStudents(classId)
+    return normalizeResponse(response)
+  } catch (err) {
+    console.error('Erro ao buscar alunos:', err)
+
+    // Fallback: se houver um erro 500, tentamos uma busca sem filtro para ver se o problema é o parâmetro
+    if (err.response?.status === 500 && classId) {
+      console.warn('Backend retornou erro 500. Tentando busca sem filtro de turma como fallback...')
+      try {
+        const fallbackResponse = await carometroApi.getStudents()
+        const allStudents = normalizeResponse(fallbackResponse)
+        // Filtramos no frontend apenas para não deixar o usuário sem dados
+        return allStudents.filter(s => String(s.class_id || s.turma_id) === String(classId))
+      } catch (fallbackErr) {
+        console.error('Busca de fallback também falhou:', fallbackErr)
+      }
+    }
+    throw err
+  }
 }
 
 export async function createStudent(studentData) {
