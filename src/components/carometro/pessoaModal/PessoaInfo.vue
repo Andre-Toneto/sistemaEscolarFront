@@ -1,17 +1,39 @@
 <template>
   <v-row dense>
     <!-- Foto -->
-    <v-col cols="12" :sm="isAdmin ? 3 : 4" class="d-flex justify-center">
-      <v-img v-if="pessoa.foto" :src="pessoa.foto" height="240" width="180" rounded="lg" cover class="elevation-6">
-        <template #error>
-          <v-sheet height="240" width="180" rounded="lg" class="elevation-6 d-flex align-center justify-center">
-            <v-icon size="80" color="grey-lighten-2">mdi-account</v-icon>
-          </v-sheet>
-        </template>
-      </v-img>
-      <v-sheet v-else height="240" width="180" rounded="lg" class="elevation-6 d-flex align-center justify-center">
-        <v-icon size="80" color="grey-lighten-2">mdi-account</v-icon>
-      </v-sheet>
+    <v-col cols="12" :sm="isAdmin ? 3 : 4" class="d-flex flex-column align-center">
+      <div class="position-relative">
+        <v-img v-if="pessoa.photo_url || pessoa.foto" :src="pessoa.photo_url || pessoa.foto" height="240" width="180" rounded="lg" cover class="elevation-6">
+          <template #error>
+            <v-sheet height="240" width="180" rounded="lg" class="elevation-6 d-flex align-center justify-center">
+              <v-icon size="80" color="grey-lighten-2">mdi-account</v-icon>
+            </v-sheet>
+          </template>
+        </v-img>
+        <v-sheet v-else height="240" width="180" rounded="lg" class="elevation-6 d-flex align-center justify-center">
+          <v-icon size="80" color="grey-lighten-2">mdi-account</v-icon>
+        </v-sheet>
+
+        <!-- Botão de Upload Individual -->
+        <v-btn
+          v-if="isAdmin"
+          icon="mdi-camera"
+          color="senai-red"
+          size="small"
+          class="position-absolute"
+          style="bottom: -10px; right: -10px; z-index: 2;"
+          @click="triggerUpload"
+          :loading="uploading"
+          title="Alterar foto"
+        />
+        <input
+          type="file"
+          ref="fileInput"
+          style="display: none"
+          accept="image/*"
+          @change="onFileSelected"
+        />
+      </div>
     </v-col>
 
     <!-- Acadêmico -->
@@ -88,16 +110,52 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { safeValue, formatData } from '@/utils/exportUtils'
+import * as carometroService from '@/services/carometro.services'
 
-defineProps({
+const props = defineProps({
   pessoa: Object,
   cursoNome: String,
   turmaNome: String,
   isAdmin: Boolean
 })
 
-const emit = defineEmits(['copy'])
+const emit = defineEmits(['copy', 'aluno-atualizado'])
+
+const fileInput = ref(null)
+const uploading = ref(false)
+
+const triggerUpload = () => {
+  fileInput.value?.click()
+}
+
+const onFileSelected = async (e) => {
+  const file = e.target.files?.[0]
+  if (!file) return
+
+  uploading.value = true
+  try {
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      const base64 = event.target.result
+
+      // Atualizar no banco via service
+      const updated = await carometroService.updateStudent(props.pessoa.id, {
+        photo_url: base64
+      })
+
+      // Emitir evento para atualizar o estado local
+      emit('aluno-atualizado', updated)
+      uploading.value = false
+    }
+    reader.readAsDataURL(file)
+  } catch (err) {
+    console.error('Falha ao subir foto:', err)
+    uploading.value = false
+    alert('Erro ao carregar imagem')
+  }
+}
 
 const copy = (label, value) => {
   emit('copy', { label, value })

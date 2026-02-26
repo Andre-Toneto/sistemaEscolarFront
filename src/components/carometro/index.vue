@@ -72,16 +72,6 @@
       <p class="text-body-1 text-medium-emphasis mt-4">Carregando dados...</p>
     </div>
 
-    <!-- Erro -->
-    <div v-else-if="error" class="text-center py-12">
-      <v-icon size="80" color="error" class="mb-4">mdi-alert-circle</v-icon>
-      <h3 class="text-h6 text-error mb-2">Falha ao carregar alunos</h3>
-      <p class="text-body-2 text-medium-emphasis mb-6">{{ error }}</p>
-      <v-btn variant="outlined" color="primary" prepend-icon="mdi-refresh" @click="carregarAlunos">
-        Tentar Novamente
-      </v-btn>
-    </div>
-
     <!-- Lista vazia -->
     <div v-else-if="pessoas.length === 0" class="text-center py-12">
       <v-icon size="80" color="grey-lighten-2" class="mb-4">mdi-account-off</v-icon>
@@ -136,7 +126,6 @@ const emit = defineEmits(['selectPessoa', 'updateTotal'])
 
 const pessoas = ref([])
 const loading = ref(false)
-const error = ref(null)
 const termoBusca = ref('')
 
 const pessoasFiltradas = computed(() => {
@@ -155,14 +144,12 @@ const filtroAtivo = computed(() => !!termoBusca.value)
 const carregarAlunos = async () => {
   if (!props.turma) return
   loading.value = true
-  error.value = null
   try {
     const alunos = await carometroService.getStudents(props.turma)
     pessoas.value = sortPessoas(alunos)
     emit('updateTotal', Array.isArray(pessoas.value) ? pessoas.value.length : 0)
-  } catch (err) {
-    console.error('Erro ao carregar alunos:', err)
-    error.value = err.message || 'Erro ao carregar alunos'
+  } catch (error) {
+    console.error('Erro ao carregar alunos:', error)
     pessoas.value = []
     emit('updateTotal', 0)
   } finally {

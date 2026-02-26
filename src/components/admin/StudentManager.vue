@@ -26,13 +26,6 @@
         </v-col>
       </v-row>
 
-      <v-alert v-if="error" type="error" variant="tonal" class="mb-4">
-        {{ error }}
-        <template v-slot:append>
-          <v-btn size="small" variant="text" @click="fetchStudents">Tentar Novamente</v-btn>
-        </template>
-      </v-alert>
-
       <v-table v-if="students.length > 0">
         <thead>
           <tr>
@@ -164,7 +157,6 @@ const filterClass = ref(null)
 const modal = ref(false)
 const editing = ref(null)
 const loading = ref(false)
-const error = ref(null)
 
 const form = ref({
   course_id: '',
@@ -196,12 +188,10 @@ const filteredClasses = computed(() => {
 
 const fetchStudents = async () => {
   loading.value = true
-  error.value = null
   try {
     students.value = await carometroService.getStudents(filterClass.value)
   } catch (err) {
     console.error('Error fetching students:', err)
-    error.value = err.message || 'Erro ao carregar alunos'
   } finally {
     loading.value = false
   }

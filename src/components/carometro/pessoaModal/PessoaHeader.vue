@@ -33,7 +33,7 @@
             Ativo
           </v-chip>
         </div>
-        <p class="text-body-2 text-white">{{ safeValue(pessoa.position || pessoa.cargo) }}</p>
+        <p class="text-body-2 text-white" v-if="pessoa.position || pessoa.cargo">{{ safeValue(pessoa.position || pessoa.cargo) }}</p>
       </div>
     </div>
     <v-btn icon="mdi-close" variant="text" color="white" size="large" @click="$emit('close')" />

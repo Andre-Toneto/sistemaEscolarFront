@@ -37,8 +37,8 @@ export const buildCsv = (pessoa, curso, turma, items = []) => {
   const head = ['Nome','Curso','Matrícula','Tipo','Data','Descrição','Autor']
   const linhas = [head.join(sep)]
   
-  const nome = safeValue(pessoa?.nome)
-  const cursoNome = safeValue(curso?.nome || curso)
+  const nome = safeValue(pessoa?.name)
+  const cursoNome = safeValue(curso?.course || curso)
   const mat = safeValue(pessoa?.matricula)
   
   items.forEach(o => {
@@ -59,7 +59,7 @@ export const buildCsv = (pessoa, curso, turma, items = []) => {
 
 export const exportOcorrenciasPDF = async (pessoa, curso, turma, itens) => {
   const titulo = 'Histórico de Ocorrências'
-  const aluno = `${safeValue(pessoa?.nome)} - Matrícula: ${safeValue(pessoa?.matricula)} - ${safeValue(curso?.nome || curso)} - ${safeValue(turma?.nome || turma)}`
+  const aluno = `${safeValue(pessoa?.name)} - Matrícula: ${safeValue(pessoa?.matricula)} - ${safeValue(curso?.nome || curso)} - ${safeValue(turma?.nome || turma)}`
 
   // Build a printable container
   const container = document.createElement('div')

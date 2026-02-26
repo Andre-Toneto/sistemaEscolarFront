@@ -22,7 +22,7 @@
     <!-- Avatar/Foto -->
     <div class="text-center pt-6 pb-2">
       <v-avatar size="80" class="elevation-4">
-        <v-img :src="pessoa.foto_url || '/placeholder-student.png'" cover>
+        <v-img :src="pessoa.photo_url || pessoa.foto_url || pessoa.foto || '/placeholder-student.png'" cover>
           <template #placeholder>
             <v-skeleton-loader type="avatar" />
           </template>

@@ -21,6 +21,7 @@
           :turmaNome="turma?.class_name"
           :isAdmin="isAdmin"
           @copy="onCopy"
+          @aluno-atualizado="onStudentUpdated"
         />
 
         <!-- Ocorrências -->
