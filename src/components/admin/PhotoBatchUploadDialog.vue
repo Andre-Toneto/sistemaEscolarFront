@@ -95,28 +95,58 @@ const readFileAsBase64 = (file) => {
   })
 }
 
+// Compress image to avoid connection reset issues
+const compressImage = (base64Str, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.src = base64Str
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      let width = img.width
+      let height = img.height
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width
+          width = maxWidth
+        }
+      } else {
+        if (height > maxHeight) {
+          width *= maxHeight / height
+          height = maxHeight
+        }
+      }
+
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = reject
+  })
+}
+
 const startUpload = async () => {
   if (!files.value || files.value.length === 0) return
-  
+
   processing.value = true
   results.value = []
   currentProgress.value = 0
-  
+
   try {
-    // 1. Buscar todos os alunos para mapear matricula -> id
-    // Nota: Em um sistema muito grande, isso deve ser feito via endpoint específico de busca por matrícula
     const allStudents = await carometroService.getStudents()
-    
+
     for (const file of files.value) {
       currentProgress.value++
       const filename = file.name
       const matricula = filename.split('.')[0].trim()
-      
+
       try {
-        const student = allStudents.find(s => 
+        const student = allStudents.find(s =>
           String(s.registration_number || s.matricula || '').trim() === matricula
         )
-        
+
         if (!student) {
           results.value.unshift({
             filename,
@@ -125,12 +155,20 @@ const startUpload = async () => {
           })
           continue
         }
-        
-        const base64 = await readFileAsBase64(file)
+
+        let base64 = await readFileAsBase64(file)
+
+        // Compress if possible
+        try {
+          base64 = await compressImage(base64)
+        } catch (e) {
+          console.warn('Falha ao comprimir imagem, enviando original:', e)
+        }
+
         await carometroService.updateStudent(student.id, {
           photo_url: base64
         })
-        
+
         results.value.unshift({
           filename,
           success: true,
@@ -144,7 +182,7 @@ const startUpload = async () => {
         })
       }
     }
-    
+
     files.value = []
     emit('completed')
   } catch (err) {

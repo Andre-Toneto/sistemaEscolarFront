@@ -42,15 +42,15 @@ export async function getStudentById(id: string) {
 }
 
 export async function updateStudent(id: string, data: any) {
+  const updateData = { ...data, updated_at: new Date() }
+
+  if (data.birth_date !== undefined) {
+    updateData.birth_date = data.birth_date ? new Date(data.birth_date) : null
+  }
+
   return prisma.students.update({
     where: { id },
-    data: {
-      ...data,
-      birth_date: data.birth_date
-        ? new Date(data.birth_date)
-        : null,
-      updated_at: new Date()
-    }
+    data: updateData
   })
 }
 

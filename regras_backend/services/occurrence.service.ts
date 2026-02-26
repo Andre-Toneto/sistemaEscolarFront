@@ -7,6 +7,7 @@ export async function createOccurrence(data: any) {
     data: {
       student_id: data.student_id ?? null,
       user_id: data.user_id ?? null,
+      user_name: data.user_name ?? null,
       date: new Date(data.date),
       description: data.description ?? null,
       type: data.type ?? null,
@@ -42,6 +43,7 @@ export async function updateOccurrence(id: string, data: any) {
     data: {
       student_id: data.student_id ?? undefined,
       user_id: data.user_id ?? undefined,
+      user_name: data.user_name ?? undefined,
       date: data.date ? new Date(data.date) : undefined,
       description: data.description ?? undefined,
       type: data.type ?? undefined,

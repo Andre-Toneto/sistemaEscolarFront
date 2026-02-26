@@ -1,14 +1,6 @@
 <template>
   <v-sheet class="modal-gradient-header d-flex align-center justify-space-between pa-2" rounded="t-xl">
     <div class="d-flex align-center">
-      <v-avatar size="64" class="elevation-8 modal-avatar-border">
-        <v-img v-if="pessoa.foto" :src="pessoa.foto">
-          <template #error>
-            <v-icon color="white" size="32">mdi-account</v-icon>
-          </template>
-        </v-img>
-        <v-icon v-else color="white" size="32">mdi-account</v-icon>
-      </v-avatar>
       <div class="ml-4">
         <div class="d-flex align-center">
           <h2 class="text-h5 font-weight-bold text-white mr-3">{{ safeValue(pessoa.name || pessoa.nome).toUpperCase() }}</h2>

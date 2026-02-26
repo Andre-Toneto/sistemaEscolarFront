@@ -46,10 +46,10 @@ export const buildCsv = (pessoa, curso, turma, items = []) => {
       nome,
       cursoNome,
       mat,
-      safeValue(o.tipo || 'Outro'),
-      formatData(o.data),
-      String(o.descricao || '').replace(/\r?\n|\r/g, ' ').replace(/"/g, '""'),
-      safeValue(o.autor)
+      safeValue(o.tipo || o.type || 'Outro'),
+      formatData(o.data || o.date),
+      String(o.descricao || o.description || '').replace(/\r?\n|\r/g, ' ').replace(/"/g, '""'),
+      safeValue(o.user_name || o.autor)
     ]
     const escaped = cols.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v))
     linhas.push(escaped.join(sep))
@@ -89,10 +89,10 @@ export const exportOcorrenciasPDF = async (pessoa, curso, turma, itens) => {
         <tbody>
           ${itens.length ? itens.map(o => `
             <tr>
-              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${safeValue(o.tipo || 'Outro')}</td>
-              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${formatData(o.data)}</td>
-              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${safeValue(o.autor)}</td>
-              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${String(o.descricao || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${safeValue(o.tipo || o.type || 'Outro')}</td>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${formatData(o.data || o.date)}</td>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${safeValue(o.user_name || o.autor)}</td>
+              <td style="border:1px solid #ddd; padding:8px; vertical-align:top">${String(o.descricao || o.description || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
             </tr>
           `).join('') : '<tr><td colspan="4" style="border:1px solid #ddd; padding:16px; text-align:center">Sem ocorrências</td></tr>'}
         </tbody>
