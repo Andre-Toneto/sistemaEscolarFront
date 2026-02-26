@@ -17,7 +17,9 @@ export function deleteCourse(id) {
 }
 
 export function getClasses(courseId?: string) {
-  return api.get("/classes", { params: { course_id: courseId } })
+  const params: any = {}
+  if (courseId) params.course_id = courseId
+  return api.get("/classes", { params })
 }
 
 export function createClass(data) {
@@ -37,7 +39,9 @@ export function deleteClass(id) {
 }
 
 export function getStudents(classId?: string) {
-  return api.get("/students", { params: { class_id: classId } })
+  const params: any = {}
+  if (classId) params.class_id = classId
+  return api.get("/students", { params })
 }
 
 export function createStudent(studentData) {

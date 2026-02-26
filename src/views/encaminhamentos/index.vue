@@ -119,6 +119,17 @@
           <v-card-title class="d-flex align-center justify-space-between">
             <span class="text-h6 text-senai-red">Encaminhamentos — {{ tabLabel }}</span>
             <div class="d-flex align-center">
+              <v-text-field
+                v-model="termoBusca"
+                label="Pesquisar..."
+                variant="outlined"
+                density="compact"
+                hide-details
+                prepend-inner-icon="mdi-magnify"
+                class="mr-4"
+                style="max-width: 300px"
+                clearable
+              />
               <v-btn variant="text" color="senai-red" @click="carregar" :loading="loading">
                 <v-icon start>mdi-refresh</v-icon>
                 Atualizar
@@ -144,13 +155,13 @@
               <p class="text-medium-emphasis mt-2">Carregando...</p>
             </div>
 
-            <div v-else-if="items.length === 0" class="text-center py-12">
+            <div v-else-if="filteredItems.length === 0" class="text-center py-12">
               <v-icon size="80" color="grey-lighten-2" class="mb-2">mdi-inbox</v-icon>
-              <p class="text-body-2 text-medium-emphasis mb-0">Nenhum encaminhamento {{ tab === 'abertos' ? 'em aberto' : 'finalizado' }}.</p>
+              <p class="text-body-2 text-medium-emphasis mb-0">Nenhum encaminhamento encontrado.</p>
             </div>
 
             <v-list v-else lines="two" density="comfortable">
-              <v-list-item v-for="e in items" :key="e.id" rounded="lg" class="mb-2" :subtitle="e.descricao">
+              <v-list-item v-for="e in filteredItems" :key="e.id" rounded="lg" class="mb-2" :subtitle="e.descricao">
                 <template #prepend>
                   <v-avatar color="senai-light-red">
                     <v-icon color="senai-red">{{ tab === 'abertos' ? 'mdi-folder-open' : 'mdi-check-circle' }}</v-icon>
@@ -162,7 +173,7 @@
                 <v-list-item-subtitle>
                   <div><span class="text-medium-emphasis">Motivo: </span>{{ e.motivo }}</div>
                   <div class="text-caption">
-                    Criado por: {{ e.createdByName || 'N/A' }}
+                    Criado por: {{ e.user_name || e.createdByName || 'N/A' }}
                     <span v-if="e.finalizedByName"> • Finalizado por: {{ e.finalizedByName }} em {{ e.finalizedAt ? new Date(e.finalizedAt).toLocaleString() : '' }}</span>
                     <span v-else-if="e.status === 'finalizado'"> • Finalizado</span>
                   </div>
@@ -285,6 +296,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as encaminhamentosService from '@/services/encaminhamentos.services'
+import { formatData } from '@/utils/exportUtils'
 
 const route = useRoute()
 const router = useRouter()
@@ -293,6 +305,7 @@ const courseTypes = ['FIC', 'CAI', 'Técnico']
 
 const tab = ref('abertos')
 const selectedCourseType = ref('Todos')
+const termoBusca = ref('')
 const tabLabel = computed(() => (tab.value === 'abertos' ? 'Abertos' : 'Finalizados'))
 
 const formRef = ref(null)
@@ -316,6 +329,20 @@ const loadUser = () => {
 
 const items = ref([])
 const counts = ref({ total: 0, byType: {} })
+
+const filteredItems = computed(() => {
+  if (!termoBusca.value.trim()) return items.value
+  const termo = termoBusca.value.toLowerCase().trim()
+  return items.value.filter(e => {
+    return (e.aluno || '').toLowerCase().includes(termo) ||
+           (e.cursoNome || '').toLowerCase().includes(termo) ||
+           (e.turma || '').toLowerCase().includes(termo) ||
+           (e.motivo || '').toLowerCase().includes(termo) ||
+           (e.descricao || '').toLowerCase().includes(termo) ||
+           (e.user_name || e.createdByName || '').toLowerCase().includes(termo) ||
+           formatData(e.date || e.createdAt).toLowerCase().includes(termo)
+  })
+})
 
 const isSecretaria = computed(() => (String(user.value?.role || '').toLowerCase() === 'secretaria'))
 
@@ -372,7 +399,13 @@ const criarEncaminhamento = async () => {
   if (!formValid.value) return
   saving.value = true
   try {
-    await encaminhamentosService.createEncaminhamento(form.value)
+    const payload = {
+      ...form.value,
+      user_id: user.value?.id,
+      user_name: user.value?.name,
+      date: new Date().toISOString()
+    }
+    await encaminhamentosService.createEncaminhamento(payload)
     form.value = { aluno: '', courseType: '', cursoNome: '', turma: '', motivo: '', descricao: '' }
     if (formRef.value?.resetValidation) formRef.value.resetValidation()
     snack.value = { open: true, msg: 'Encaminhamento criado.' }

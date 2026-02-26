@@ -11,6 +11,7 @@
       <v-tab value="dashboard">Dashboard</v-tab>
       <v-tab value="academic">Cursos & Turmas</v-tab>
       <v-tab value="students">Alunos</v-tab>
+      <v-tab value="photos">Fotos em Lote</v-tab>
     </v-tabs>
 
     <v-window v-model="tab">
@@ -35,9 +36,24 @@
       <v-window-item value="students">
         <StudentManager ref="studentManagerRef" @open-import="importDialog = true" />
       </v-window-item>
+
+      <!-- Fotos em Lote -->
+      <v-window-item value="photos">
+        <v-card elevation="4" rounded="xl" class="pa-6 text-center">
+          <v-icon size="64" color="senai-navy" class="mb-4">mdi-image-multiple</v-icon>
+          <h2 class="text-h5 mb-2">Upload de Fotos em Lote</h2>
+          <p class="text-body-1 text-grey mb-6">
+            Suba múltiplas fotos de uma vez. O sistema identificará cada aluno pela matrícula no nome do arquivo.
+          </p>
+          <v-btn color="senai-navy" size="large" @click="photoBatchDialog = true">
+            Abrir Seletor de Fotos
+          </v-btn>
+        </v-card>
+      </v-window-item>
     </v-window>
 
     <StudentImportDialog v-model="importDialog" @imported="onImported" />
+    <PhotoBatchUploadDialog v-model="photoBatchDialog" @completed="onPhotosUploaded" />
 
     <v-snackbar v-model="snack.show" :color="snack.color">{{ snack.text }}</v-snackbar>
   </v-container>
@@ -53,10 +69,12 @@ import CourseManager from '@/components/admin/CourseManager.vue'
 import ClassManager from '@/components/admin/ClassManager.vue'
 import StudentManager from '@/components/admin/StudentManager.vue'
 import StudentImportDialog from '@/components/admin/StudentImportDialog.vue'
+import PhotoBatchUploadDialog from '@/components/admin/PhotoBatchUploadDialog.vue'
 
 const store = useCarometroStore()
 const tab = ref('dashboard')
 const importDialog = ref(false)
+const photoBatchDialog = ref(false)
 const studentManagerRef = ref(null)
 const snack = reactive({ show: false, text: '', color: 'success' })
 
@@ -78,6 +96,10 @@ const onImported = () => {
   if (studentManagerRef.value) {
     studentManagerRef.value.fetchStudents()
   }
+}
+
+const onPhotosUploaded = () => {
+  showSnack('Upload de fotos concluído')
 }
 
 onMounted(() => {

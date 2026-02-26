@@ -21,14 +21,9 @@
           :turmaNome="turma?.class_name"
           :isAdmin="isAdmin"
           @copy="onCopy"
-        />
-
-        <!-- Ocorrências -->
-        <PessoaOccurrences
-          :studentId="pessoa?.id"
-          :isAdmin="isAdmin"
+          @aluno-atualizado="onStudentUpdated"
           @export-pdf="exportPDF"
-          @updated="onOcorrenciaUpdated"
+          @ocorrencia-atualizada="onOcorrenciaUpdated"
         />
       </v-card-text>
     </v-card>
@@ -72,7 +67,6 @@ import { ensureFoto } from '@/utils/carometroPhoto'
 // Subcomponents
 import PessoaHeader from './pessoaModal/PessoaHeader.vue'
 import PessoaInfo from './pessoaModal/PessoaInfo.vue'
-import PessoaOccurrences from './pessoaModal/PessoaOccurrences.vue'
 import PessoaActions from './pessoaModal/PessoaActions.vue'
 
 const props = defineProps({

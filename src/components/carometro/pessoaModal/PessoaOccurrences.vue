@@ -1,5 +1,5 @@
 <template>
-  <v-card elevation="4" rounded="xl" class="mt-4">
+  <v-card elevation="4" rounded="xl" variant="tonal">
     <v-card-title class="d-flex align-center justify-space-between pa-4">
       <div class="d-flex align-center">
         <v-icon color="error" class="mr-2">mdi-alert-circle</v-icon>
@@ -12,6 +12,7 @@
         <v-btn color="primary" size="small" prepend-icon="mdi-plus" @click="abrirModalOcorrencia()">
           Nova
         </v-btn>
+        <v-btn color="primary" size="x-small" variant="transparent"  icon="mdi-fullscreen" @click="showFullscreen = true" title="Ver em tela cheia" />
       </div>
     </v-card-title>
     <v-divider />
@@ -27,11 +28,15 @@
         class="pa-2"
       />
 
-      <v-list v-if="ocorrenciasFiltradas.length > 0" lines="three">
-        <v-list-item v-for="oc in ocorrenciasFiltradas" :key="oc.id" class="px-4">
+      <v-list v-if="ocorrenciasFiltradas.length > 0" lines="three" :height="isAdmin ? 210 : 300">
+        <v-list-item 
+          v-for="oc in ocorrenciasFiltradas" 
+          :key="oc.id" 
+          class="ml-2 py-0 border-b border-warning overflow-auto"
+        >
           <template #prepend>
-            <v-avatar :color="getTipoColor(oc.type || oc.tipo)" size="40">
-              <v-icon color="white">{{ getTipoIcon(oc.type || oc.tipo) }}</v-icon>
+            <v-avatar class="align-center" :color="getTipoColor(oc.type || oc.tipo)" size="32">
+              <v-icon color="white" size="20">{{ getTipoIcon(oc.type || oc.tipo) }}</v-icon>
             </v-avatar>
           </template>
 
@@ -39,7 +44,7 @@
             {{ oc.type || oc.tipo || 'Ocorrência' }}
           </v-list-item-title>
           <v-list-item-subtitle>
-            <div class="mb-1">{{ formatData(oc.date || oc.data) }} • por {{ oc.user?.name || oc.autor || 'Sistema' }}</div>
+            <div class="mb-1 text-caption">{{ formatData(oc.date || oc.data) }} • por {{ oc.user_name || oc.user?.name || oc.autor || 'Sistema' }}</div>
             <div class="text-body-2 text-wrap">{{ oc.description || oc.descricao }}</div>
           </v-list-item-subtitle>
 
@@ -55,9 +60,9 @@
           </template>
         </v-list-item>
       </v-list>
-      <div v-else class="pa-8 text-center text-grey">
+      <v-list v-else class="pa-8 text-center text-grey" :height="isAdmin ? 210 : ''">
         Nenhuma ocorrência encontrada.
-      </div>
+      </v-list>
     </v-card-text>
 
     <!-- Modal Nova/Editar Ocorrência -->
@@ -112,6 +117,66 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Dialog Tela Cheia -->
+    <v-dialog v-model="showFullscreen" fullscreen transition="dialog-bottom-transition">
+      <v-card>
+        <v-toolbar color="primary">
+          <v-btn icon="mdi-close" @click="showFullscreen = false"></v-btn>
+          <v-toolbar-title>Histórico Completo de Ocorrências</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-btn v-if="isAdmin" prepend-icon="mdi-file-pdf-box" variant="text" @click="$emit('export-pdf')">Exportar PDF</v-btn>
+        </v-toolbar>
+
+        <v-card-text class="pa-6">
+          <v-row class="mb-4">
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="termoPesquisa"
+                label="Pesquisar..."
+                prepend-inner-icon="mdi-magnify"
+                variant="outlined"
+                clearable
+              />
+            </v-col>
+          </v-row>
+
+          <v-table class="elevation-1" rounded="lg">
+            <thead>
+              <tr>
+                <th class="text-left font-weight-bold">Tipo</th>
+                <th class="text-left font-weight-bold">Data</th>
+                <th class="text-left font-weight-bold">Autor</th>
+                <th class="text-left font-weight-bold">Descrição</th>
+                <th class="text-center font-weight-bold" v-if="isAdmin">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="oc in ocorrenciasFiltradas" :key="oc.id">
+                <td>
+                  <div class="d-flex align-center">
+                    <v-avatar :color="getTipoColor(oc.type || oc.tipo)" size="28" class="mr-2">
+                      <v-icon color="white" size="16">{{ getTipoIcon(oc.type || oc.tipo) }}</v-icon>
+                    </v-avatar>
+                    {{ oc.type || oc.tipo || 'Ocorrência' }}
+                  </div>
+                </td>
+                <td>{{ formatData(oc.date || oc.data) }}</td>
+                <td>{{ oc.user_name || oc.user?.name || oc.autor || 'Sistema' }}</td>
+                <td style="max-width: 400px;">{{ oc.description || oc.descricao }}</td>
+                <td class="text-center" v-if="isAdmin">
+                  <v-btn icon="mdi-pencil" size="small" variant="text" color="primary" @click="abrirModalOcorrencia(oc)" v-if="canAlterar(oc)"></v-btn>
+                  <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="confirmDelete(oc)" v-if="canAlterar(oc)"></v-btn>
+                </td>
+              </tr>
+              <tr v-if="ocorrenciasFiltradas.length === 0">
+                <td colspan="5" class="text-center py-8 text-grey">Nenhuma ocorrência encontrada.</td>
+              </tr>
+            </tbody>
+          </v-table>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-card>
 </template>
 
@@ -136,6 +201,7 @@ const modalOcorrencia = ref(false)
 const saving = ref(false)
 const editandoOcorrencia = ref(null)
 const showConfirmDelete = ref(false)
+const showFullscreen = ref(false)
 const toDelete = ref(null)
 
 const formOcorrencia = ref({
@@ -166,7 +232,8 @@ const ocorrenciasFiltradas = computed(() => {
   return occurrences.value.filter(oc => {
     return (oc.type || oc.tipo || '').toLowerCase().includes(termo) ||
            (oc.description || oc.descricao || '').toLowerCase().includes(termo) ||
-           (oc.user?.name || oc.autor || '').toLowerCase().includes(termo)
+           (oc.user_name || oc.user?.name || oc.autor || '').toLowerCase().includes(termo) ||
+           formatData(oc.date || oc.data).toLowerCase().includes(termo)
   })
 })
 
@@ -203,6 +270,7 @@ const salvarOcorrencia = async () => {
     const payload = {
       student_id: props.studentId,
       user_id: authStore.user?.id,
+      user_name: authStore.user?.name,
       description: formOcorrencia.value.descricao,
       type: formOcorrencia.value.tipo,
       date: new Date(formOcorrencia.value.data).toISOString()

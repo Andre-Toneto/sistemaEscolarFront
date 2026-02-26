@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id                 String               @id(map: "User_pkey") @default(uuid())
+  nif                String?              @unique(map: "User_nif_key")
+  name               String
+  email              String               @unique(map: "User_email_key")
+  password           String
+  birthDate          DateTime?
+  role               String
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  updatedBy          String?
+  occurrences        occurrences[]
+  reserve_classrooms reserve_classrooms[]
+}
+
+model classes {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  class_name    String    @db.VarChar(255)
+  course_id     String    @db.Uuid
+  archived      Int?
+  data_archived DateTime? @db.Timestamptz(6)
+  upgrade_by_id String?   @db.Uuid
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  courses       courses   @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_classes_course")
+  classes       classes?  @relation("classesToclasses", fields: [upgrade_by_id], references: [id], onUpdate: NoAction)
+  other_classes classes[] @relation("classesToclasses")
+
+  @@unique([class_name, course_id])
+}
+
+model classrooms {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String               @db.VarChar(150)
+  capacity           Int?
+  type               String?              @db.VarChar(100)
+  reserve_classrooms reserve_classrooms[]
+}
+
+model courses {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String               @db.VarChar(150)
+  color              String?              @db.VarChar(50)
+  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
+  created_at         DateTime?            @default(now()) @db.Timestamp(6)
+  classes            classes[]
+  reserve_classrooms reserve_classrooms[]
+  students           students[]
+}
+
+model students {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  course_id           String        @db.Uuid
+  class_id            String        @db.Uuid
+  registration_number String?       @unique @db.VarChar(50)
+  name                String        @db.VarChar(150)
+  position            String?       @db.VarChar(100)
+  rg                  String?       @db.VarChar(20)
+  cpf                 String?       @db.VarChar(20)
+  birth_date          DateTime?     @db.Date
+  mobile_phone        String?       @db.VarChar(20)
+  phone               String?       @db.VarChar(20)
+  email               String?       @db.VarChar(150)
+  address             String?       @db.VarChar(255)
+  neighborhood        String?       @db.VarChar(100)
+  city                String?       @db.VarChar(100)
+  postal_code         String?       @db.VarChar(20)
+  mother_name         String?       @db.VarChar(150)
+  father_name         String?       @db.VarChar(150)
+  company             String?       @db.VarChar(150)
+  photo_url           String?
+  created_at          DateTime?     @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?     @default(now()) @db.Timestamp(6)
+  occurrences         occurrences[]
+  courses             courses       @relation(fields: [course_id], references: [id], onUpdate: NoAction, map: "fk_students_course")
+}
+
+model reserve_classrooms {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classrooms_id String      @db.Uuid
+  data          DateTime    @db.Date
+  period        period_enum
+  course_id     String?     @db.Uuid
+  user_id       String      @db.VarChar(255)
+  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
+  classrooms    classrooms  @relation(fields: [classrooms_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courses       courses?    @relation(fields: [course_id], references: [id], onUpdate: NoAction)
+  users         users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([classrooms_id, data, period])
+}
+
+model occurrences {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  student_id  String    @db.Uuid
+  type        String    @db.VarChar(100)
+  description String
+  date        DateTime  @db.Timestamptz(6)
+  user_id     String    @db.VarChar(255)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @db.Timestamptz(6)
+  user_name   String    @db.VarChar(200)
+  students    students  @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_incidents_student")
+  users       users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_incidents_user")
+}
+
+enum period_enum {
+  MANHA
+  TARDE
+  NOITE
+}

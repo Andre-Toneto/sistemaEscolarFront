@@ -40,12 +40,12 @@
         </thead>
         <tbody>
           <tr v-for="student in students" :key="student.id">
-            <td>{{ student.registration_number }}</td>
-            <td>{{ student.name }}</td>
-            <td>{{ store.getClassName(student.class_id) }}</td>
+            <td>{{ student.registration_number || student.matricula || '---' }}</td>
+            <td>{{ student.name || student.nome || '---' }}</td>
+            <td>{{ store.getClassName(student.class_id || student.turma_id) }}</td>
             <td>{{ student.cpf }}</td>
             <td>{{ student.email }}</td>
-            <td>{{ student.position }}</td>
+            <td>{{ student.position || student.cargo }}</td>
             <td>
               <v-btn icon="mdi-pencil" variant="text" size="small" @click="openModal(student)"></v-btn>
               <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="confirmDelete(student)"></v-btn>

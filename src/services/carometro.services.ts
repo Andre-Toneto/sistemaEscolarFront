@@ -1,9 +1,17 @@
 import * as carometroApi from "@/api/carometro.api"
 
+// Helper para normalizar respostas da API
+function normalizeResponse(response) {
+  if (!response || !response.data) return []
+  const data = response.data
+  if (Array.isArray(data)) return data
+  return data?.data || []
+}
+
 // Courses
 export async function getCourses() {
   const response = await carometroApi.getCourses()
-  return response.data
+  return normalizeResponse(response)
 }
 
 export async function createCourse(data) {
@@ -24,7 +32,7 @@ export async function deleteCourse(id) {
 // Classes
 export async function getClasses(courseId?: string) {
   const response = await carometroApi.getClasses(courseId)
-  return response.data
+  return normalizeResponse(response)
 }
 
 export async function createClass(data) {
@@ -43,13 +51,9 @@ export async function archiveClass(id) {
 }
 
 export async function deleteClass(id) {
-  // Garantir a exclusão dos alunos antes de deletar a turma
-  // Isso resolve casos onde o banco de dados está apenas desvinculando os alunos (Set Null)
-  // em vez de deletá-los (Cascade Delete)
   try {
     const students = await getStudents(id)
     if (students && students.length > 0) {
-      console.log(`Limpando ${students.length} alunos da turma ${id} antes da exclusão...`)
       await Promise.all(students.map(s => deleteStudent(s.id)))
     }
   } catch (err) {
@@ -63,7 +67,7 @@ export async function deleteClass(id) {
 // Students
 export async function getStudents(classId?: string) {
   const response = await carometroApi.getStudents(classId)
-  return response.data
+  return normalizeResponse(response)
 }
 
 export async function createStudent(studentData) {
