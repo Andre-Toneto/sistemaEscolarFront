@@ -68,6 +68,7 @@ const isAdmin = computed(() => authStore.isAdmin)
 const navItems = [
   { text: 'Início', route: 'home', icon: 'mdi-home' },
   { text: 'Carômetro', route: 'carometro', icon: 'mdi-account-group'},
+  { text: 'Mapa de Sala', route: 'mapa-sala', icon: 'mdi-door-open' },
   { text: 'Encaminhamentos', route: 'encaminhamentos/abertos', icon: 'mdi-send' },
   { text: 'Usuários', route: 'users', icon: 'mdi-account-cog', adminOnly: true },
   { text: 'Administração', route: 'admin', icon: 'mdi-cog', adminOnly: true }

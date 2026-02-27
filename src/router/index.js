@@ -30,6 +30,11 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: "/mapa-sala",
+    component: () => import("@/views/mapa-sala/index.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
     path: "/users",
     component: () => import("@/views/users/index.vue"),
   },
