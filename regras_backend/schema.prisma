@@ -8,19 +8,24 @@ datasource db {
 }
 
 model users {
-  id                 String               @id(map: "User_pkey") @default(uuid())
-  nif                String?              @unique(map: "User_nif_key")
-  name               String
-  email              String               @unique(map: "User_email_key")
-  password           String
-  birthDate          DateTime?            @db.Date
-  role               String
-  isActive           Boolean              @default(true)
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  updatedBy          String?
-  occurrences        occurrences[]
-  reserve_classrooms reserve_classrooms[]
+  id                                                         String                      @id(map: "User_pkey") @default(uuid())
+  nif                                                        String?                     @unique(map: "User_nif_key")
+  name                                                       String
+  email                                                      String                      @unique(map: "User_email_key")
+  password                                                   String
+  birthDate                                                  DateTime?                   @db.Date
+  role                                                       String
+  isActive                                                   Boolean                     @default(true)
+  createdAt                                                  DateTime                    @default(now())
+  updatedAt                                                  DateTime                    @updatedAt
+  updatedBy                                                  String?
+  notifications                                              notifications[]
+  occurrences                                                occurrences[]
+  reserve_classrooms                                         reserve_classrooms[]
+  student_referral_comments                                  student_referral_comments[]
+  student_referrals_student_referrals_assigned_to_idTousers  student_referrals[]         @relation("student_referrals_assigned_to_idTousers")
+  student_referrals_student_referrals_created_by_idTousers   student_referrals[]         @relation("student_referrals_created_by_idTousers")
+  student_referrals_student_referrals_finalized_by_idTousers student_referrals[]         @relation("student_referrals_finalized_by_idTousers")
 }
 
 model classes {
@@ -115,6 +120,51 @@ model occurrences {
   user_name   String    @db.VarChar(200)
   students    students  @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_incidents_student")
   users       users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_incidents_user")
+}
+
+model student_referral_comments {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referral_id       String            @db.Uuid
+  author_id         String            @db.VarChar(255)
+  author_name       String            @db.VarChar(255)
+  comment           String
+  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  users             users             @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  student_referrals student_referrals @relation(fields: [referral_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model student_referrals {
+  id                                             String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  student_name                                   String                      @db.VarChar(255)
+  reason                                         String                      @db.VarChar(255)
+  description                                    String
+  status                                         String?                     @default("aberto") @db.VarChar(50)
+  created_by_id                                  String                      @db.VarChar(255)
+  created_by_name                                String                      @db.VarChar(255)
+  assigned_to_id                                 String?                     @db.VarChar(255)
+  assigned_to_name                               String?                     @db.VarChar(255)
+  finalized_by_id                                String?                     @db.VarChar(255)
+  finalized_by_name                              String                      @db.VarChar(255)
+  created_at                                     DateTime?                   @default(now()) @db.Timestamptz(6)
+  updated_at                                     DateTime?                   @default(now()) @db.Timestamptz(6)
+  finalized_at                                   DateTime?                   @db.Timestamptz(6)
+  student_referral_comments                      student_referral_comments[]
+  users_student_referrals_assigned_to_idTousers  users?                      @relation("student_referrals_assigned_to_idTousers", fields: [assigned_to_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_student_referrals_created_by_idTousers   users                       @relation("student_referrals_created_by_idTousers", fields: [created_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_student_referrals_finalized_by_idTousers users?                      @relation("student_referrals_finalized_by_idTousers", fields: [finalized_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model notifications {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String    @db.VarChar(255)
+  title       String    @db.VarChar(255)
+  message     String
+  type        String    @db.VarChar(50)
+  entity_id   String?   @db.Uuid
+  entity_type String?   @db.VarChar(50)
+  read        Boolean?  @default(false)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  users       users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 enum period_enum {
