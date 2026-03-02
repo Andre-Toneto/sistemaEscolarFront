@@ -39,6 +39,8 @@ export async function getUsers() {
       name: true,
       email: true,
       role: true,
+      birthDate: true,
+      nif: true,
       isActive: true
     }
   })
@@ -50,6 +52,7 @@ export async function updateUser(id: string, data: any) {
     email: data.email,
     nif: data.nif,
     role: data.role,
+    birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
     updatedAt: new Date()
   }
 

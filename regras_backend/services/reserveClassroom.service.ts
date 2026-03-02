@@ -114,37 +114,16 @@ export async function deleteBulkReserveClassrooms(data: any) {
 }
 
 export async function transferReservations(data: any) {
-  const { from_classroom_id, to_classroom_id, user_id, reservation_id, all, by_period, start_date, end_date } = data
+  const { from_classroom_id, to_classroom_id, user_id, reservation_id, all } = data
 
   if (all) {
     // Transfer all future reservations of this user from one room to another
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
     return prisma.reserve_classrooms.updateMany({
       where: {
         classroom_id: from_classroom_id,
         user_id,
         data: {
-          gte: today
-        }
-      },
-      data: {
-        classroom_id: to_classroom_id
-      }
-    })
-  } else if (by_period) {
-    // Transfer reservations within a specific period
-    const startDate = new Date(start_date)
-    const endDate = new Date(end_date)
-
-    return prisma.reserve_classrooms.updateMany({
-      where: {
-        classroom_id: from_classroom_id,
-        user_id,
-        data: {
-          gte: startDate,
-          lte: endDate
+          gte: new Date()
         }
       },
       data: {

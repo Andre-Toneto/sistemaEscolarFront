@@ -8,6 +8,8 @@ import "@mdi/font/css/materialdesignicons.css"
 import { createVuetify } from "vuetify"
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
+import { initSocket } from "@/services/socket.services"
+import { registerSocketListeners } from "@/services/socketListeners.services"
 
 const vuetify = createVuetify({
   components,
@@ -59,3 +61,12 @@ authStore.initializeStore()
 app.use(router)
 app.use(vuetify)
 app.mount("#app")
+
+
+const token = localStorage.getItem("token")
+
+if (token) {
+  initSocket(token)
+  registerSocketListeners()
+}
+

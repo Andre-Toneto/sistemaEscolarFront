@@ -4,6 +4,8 @@ import * as classroomService from "../services/classroom.service"
 export async function create(request: FastifyRequest, reply: FastifyReply) {
   try {
     const classroom = await classroomService.createClassroom(request.body)
+    const io = request.server.io
+    io.emit("classroom:changed")
     return reply.status(201).send(classroom)
   } catch (error) {
     console.error(error)
@@ -32,6 +34,8 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { id } = request.params as any
     const classroom = await classroomService.updateClassroom(id, request.body)
+    const io = request.server.io
+    io.emit("classroom:changed")
     return reply.send(classroom)
   } catch (error) {
     console.error(error)
@@ -43,6 +47,8 @@ export async function remove(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { id } = request.params as any
     await classroomService.deleteClassroom(id)
+    const io = request.server.io
+    io.emit("classroom:changed")
     return reply.status(204).send()
   } catch (error) {
     console.error(error)

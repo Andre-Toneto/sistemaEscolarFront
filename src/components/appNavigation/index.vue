@@ -67,7 +67,7 @@ const isAdmin = computed(() => authStore.isAdmin)
 
 const navItems = [
   { text: 'Início', route: 'home', icon: 'mdi-home' },
-  { text: 'Carômetro', route: 'carometro', icon: 'mdi-account-group'},
+  { text: 'Carômetro', route: 'carometro', icon: 'mdi-account-group', excludeFic: true },
   { text: 'Mapa de Sala', route: 'mapa-sala', icon: 'mdi-door-open' },
   { text: 'Encaminhamentos', route: 'encaminhamentos/abertos', icon: 'mdi-send' },
   { text: 'Usuários', route: 'users', icon: 'mdi-account-cog', adminOnly: true },
@@ -76,7 +76,12 @@ const navItems = [
 
 // Filtrar itens por permissão
 const filteredNavItems = computed(() => {
-  return navItems.filter(item => !item.adminOnly || isAdmin.value)
+  const role = (authStore.user?.role || '').toLowerCase()
+  return navItems.filter(item => {
+    if (item.adminOnly && !isAdmin.value) return false
+    if (item.excludeFic && role === 'fic') return false
+    return true
+  })
 })
 
 onMounted(() => {

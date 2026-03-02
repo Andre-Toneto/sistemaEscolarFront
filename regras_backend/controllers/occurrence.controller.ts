@@ -4,6 +4,8 @@ import * as occurrenceService from "../services/occurrence.service"
 export async function create(request: FastifyRequest, reply: FastifyReply) {
   try {
     const occurrence = await occurrenceService.createOccurrence(request.body)
+    const io = request.server.io
+    io.emit("occurrence:changed")
     return reply.status(201).send(occurrence)
   } catch (error) {
     console.error(error)
@@ -32,6 +34,8 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { id } = request.params as any
     const occurrence = await occurrenceService.updateOccurrence(id, request.body)
+    const io = request.server.io
+    io.emit("occurrence:changed")
     return reply.send(occurrence)
   } catch (error) {
     console.error(error)
@@ -43,6 +47,8 @@ export async function remove(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { id } = request.params as any
     await occurrenceService.deleteOccurrence(id)
+    const io = request.server.io
+    io.emit("occurrence:changed")
     return reply.status(204).send()
   } catch (error) {
     console.error(error)

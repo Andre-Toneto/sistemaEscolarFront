@@ -4,6 +4,9 @@ import * as reserveService from "../services/reserveClassroom.service"
 export async function create(request: FastifyRequest, reply: FastifyReply) {
   try {
     const reserve = await reserveService.createReserveClassroom(request.body)
+    const io = request.server.io
+    io.emit("reserve:changed")
+
     return reply.status(201).send(reserve)
   } catch (error) {
     console.error(error)
@@ -32,6 +35,10 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { id } = request.params as any
     const reserve = await reserveService.updateReserveClassroom(id, request.body)
+
+    const io = request.server.io
+    io.emit("reserve:changed")
+
     return reply.send(reserve)
   } catch (error) {
     console.error(error)
@@ -43,6 +50,10 @@ export async function remove(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { id } = request.params as any
     await reserveService.deleteReserveClassroom(id)
+
+    const io = request.server.io
+    io.emit("reserve:changed")
+
     return reply.status(204).send()
   } catch (error) {
     console.error(error)
@@ -53,6 +64,10 @@ export async function remove(request: FastifyRequest, reply: FastifyReply) {
 export async function createBulk(request: FastifyRequest, reply: FastifyReply) {
   try {
     const result = await reserveService.createBulkReserveClassrooms(request.body)
+    
+    const io = request.server.io
+    io.emit("reserve:changed")
+
     return reply.status(201).send(result)
   } catch (error) {
     console.error(error)
@@ -63,6 +78,10 @@ export async function createBulk(request: FastifyRequest, reply: FastifyReply) {
 export async function removeBulk(request: FastifyRequest, reply: FastifyReply) {
   try {
     await reserveService.deleteBulkReserveClassrooms(request.body)
+
+    const io = request.server.io
+    io.emit("reserve:changed")
+
     return reply.status(204).send()
   } catch (error) {
     console.error(error)

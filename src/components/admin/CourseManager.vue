@@ -78,12 +78,15 @@ const save = async () => {
 
 const confirmDelete = async (course) => {
   if (!confirm(`Excluir curso ${course.name}? Isso pode excluir turmas e alunos vinculados!`)) return
+  loading.value = true
   try {
     await carometroService.deleteCourse(course.id)
     await store.fetchCourses()
     emit('updated')
   } catch (err) {
     console.error('Error deleting course:', err)
+  } finally {
+    loading.value = false
   }
 }
 </script>

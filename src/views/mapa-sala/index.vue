@@ -36,7 +36,7 @@
           </v-col>
           <v-col cols="12" md="6" class="text-right d-flex ga-2 justify-end">
             <v-btn color="info" variant="outlined" prepend-icon="mdi-calendar-range" @click="abrirBulkGeral">
-              Reserva/rem. por periodo
+              RESERVAr
             </v-btn>
             <v-btn color="success" variant="outlined" prepend-icon="mdi-file-export" @click="exportarCSV">
               Exportar
@@ -50,10 +50,10 @@
         <!-- View: Semana -->
         <div v-if="modo === 'semana'">
           <div class="d-flex align-center justify-space-between mb-3">
-            <div class="d-flex ga-2">
-              <v-btn variant="outlined" color="primary" icon="mdi-chevron-left" @click="semanaAnterior" />
+            <div class="d-flex ga-2 align-center">
+              <v-btn variant="outlined" color="primary" size="small" icon="mdi-chevron-left" @click="semanaAnterior" />
               <v-btn variant="outlined" color="primary" @click="irParaSemanaAtual">Hoje</v-btn>
-              <v-btn variant="outlined" color="primary" icon="mdi-chevron-right" @click="proximaSemana" />
+              <v-btn variant="outlined" color="primary" size="small" icon="mdi-chevron-right" @click="proximaSemana" />
             </div>
             <div class="text-h6 font-weight-medium text-senai-red">
               {{ tituloSemana }}
@@ -65,43 +65,58 @@
               <thead>
                 <tr>
                   <th class="col-sala">Sala</th>
+                  <th class="col-periodo-header">Período</th>
                   <th v-for="d in diasSemana" :key="d.toISOString()">{{ formatDia(d) }}</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="sala in salasFiltradas" :key="sala.id">
-                  <td class="col-sala">
-                    <div class="d-flex align-center justify-space-between">
-                      <div class="font-weight-bold">{{ sala.name }}</div>
-                      <v-btn v-if="isAdmin" icon="mdi-pencil" variant="text" size="x-small" @click="abrirDialogClassroom(sala)" />
-                    </div>
-                    <div class="text-caption text-grey">{{ sala.type || 'Geral' }} - Cap: {{ sala.capacity || 'N/A' }}</div>
-                  </td>
-                  <td v-for="d in diasSemana" :key="sala.id + toDateOnly(d)">
-                    <div class="celula-periodos">
+                <template v-for="sala in salasFiltradas" :key="sala.id">
+                  <tr v-for="(p, pIdx) in store.PERIODOS" :key="sala.id + p.id" :class="{ 'sala-divider': pIdx === store.PERIODOS.length - 1 }">
+                    <!-- Column Sala: only shown in the first period of each room (rowspan) -->
+                    <td v-if="pIdx === 0" class="col-sala" :rowspan="store.PERIODOS.length">
+                      <div class="d-flex align-center justify-space-between">
+                        <div class="font-weight-bold text-h6">{{ sala.name }}</div>
+                        <v-btn v-if="isAdmin" icon="mdi-pencil" variant="text" size="x-small" @click="abrirDialogClassroom(sala)" />
+                      </div>
+                      <div class="text-caption text-grey">{{ sala.type || 'Geral' }} - Cap: {{ sala.capacity || 'N/A' }}</div>
+                    </td>
+                    <!-- Column Period -->
+                    <td class="col-periodo">
+                      <div class="d-flex align-center ga-1 text-caption font-weight-bold text-uppercase text-grey-darken-1">
+                        <v-icon size="14">{{ p.id === 'MANHA' ? 'mdi-weather-sunset-up' : p.id === 'TARDE' ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
+                        {{ p.label }}
+                      </div>
+                    </td>
+                    <!-- Days columns -->
+                    <td v-for="d in diasSemana" :key="sala.id + p.id + toDateOnly(d)" class="celula-dia">
                       <v-card
-                        v-for="p in store.PERIODOS"
-                        :key="p.id"
                         :color="getReservaColor(toDateOnly(d), sala.id, p.id)"
                         :variant="getReserva(toDateOnly(d), sala.id, p.id) ? 'tonal' : 'outlined'"
                         rounded="lg"
-                        height="45"
-                        class="mb-1 pa-2 d-flex align-center cursor-pointer reservation-card"
+                        min-height="50"
+                        max-widht="100px"
+                        class="pa-2 cursor-pointer reservation-card d-flex flex-column justify-center"
                         @click="abrirReservaDialog(toDateOnly(d), sala, p.id)"
+                        elevation="0"
                       >
-                        <div class="w-100 overflow-hidden">
-                          <div class="text-caption font-weight-bold d-flex align-center ga-1">
-                            <v-icon size="12">{{ p.id === 'MANHA' ? 'mdi-weather-sunset-up' : p.id === 'TARDE' ? 'mdi-white-balance-sunny' : 'mdi-weather-night' }}</v-icon>
-                            {{ p.label }}
+                        <template v-if="getReserva(toDateOnly(d), sala.id, p.id)">
+                          <div class="font-weight-bold text-truncate line-height-1" style="font-size: 11px;">
+                            {{ getReserva(toDateOnly(d), sala.id, p.id).user_name }}
                           </div>
-                          <div class="text-truncate" style="font-size: 11px;">
-                            {{ getReservaText(toDateOnly(d), sala.id, p.id) }}
+                          <div class="text-caption text-truncate opacity-80 mt-1 line-height-1" style="font-size: 10px;">
+                            {{ getReserva(toDateOnly(d), sala.id, p.id).course_type }} - 
+                            {{ getReserva(toDateOnly(d), sala.id, p.id).course_name }}
                           </div>
+                          <div class="text-caption text-truncate opacity-80 line-height-1" style="font-size: 10px;">
+                          </div>
+                        </template>
+                        <div v-else class="text-caption text-green text-center font-italic" style="font-size: 10px;">
+                          Livre
                         </div>
                       </v-card>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                </template>
               </tbody>
             </table>
           </div>
@@ -384,13 +399,13 @@
 
           <!-- Actions for Bulk Mode Tabs -->
           <template v-if="bulkMode && !isEdicao">
-            <v-btn v-if="activeTab === 0" color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id">
+            <v-btn v-if="activeTab === 0" color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
               Reservar Período
             </v-btn>
-            <v-btn v-if="activeTab === 1" color="error" variant="elevated" @click="removerReserva" :disabled="!reservaForm.classroom_id">
+            <v-btn v-if="activeTab === 1" color="error" variant="elevated" @click="removerReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
               Remover do Período
             </v-btn>
-            <v-btn v-if="activeTab === 2" color="info" variant="elevated" @click="transferirReserva('period')" :disabled="!reservaForm.classroom_id || !reservaForm.target_classroom_id">
+            <v-btn v-if="activeTab === 2" color="info" variant="elevated" @click="transferirReserva('period')" :disabled="!reservaForm.classroom_id || !reservaForm.target_classroom_id" :loading="loading">
               Transferir Período
             </v-btn>
           </template>
@@ -401,11 +416,11 @@
               <v-btn color="warning" variant="text" @click="transferMode = !transferMode">
                 {{ transferMode ? 'Cancelar Transferir' : 'Transferir' }}
               </v-btn>
-              <v-btn color="error" variant="text" @click="removerReserva">Remover</v-btn>
-              <v-btn color="primary" variant="elevated" @click="salvarReserva">Atualizar</v-btn>
+              <v-btn color="error" variant="text" @click="removerReserva" :loading="loading">Remover</v-btn>
+              <v-btn color="primary" variant="elevated" @click="salvarReserva" :loading="loading">Atualizar</v-btn>
             </template>
             <template v-else-if="!isEdicao">
-              <v-btn color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id">
+              <v-btn color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
                 Reservar
               </v-btn>
             </template>
@@ -426,8 +441,8 @@
         <v-card-actions>
           <v-btn variant="text" @click="dialogClassroom = false">Cancelar</v-btn>
           <v-spacer />
-          <v-btn v-if="classroomForm.id" color="error" variant="text" @click="deletarSala">Excluir</v-btn>
-          <v-btn color="primary" variant="elevated" @click="salvarSala">Salvar</v-btn>
+          <v-btn v-if="classroomForm.id" color="error" variant="text" @click="deletarSala" :loading="loading">Excluir</v-btn>
+          <v-btn color="primary" variant="elevated" @click="salvarSala" :loading="loading">Salvar</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -505,6 +520,7 @@ const isAdmin = computed(() => authStore.isAdmin)
 const modo = ref('semana')
 const baseDate = ref(new Date())
 const salaFiltro = ref('')
+const loading = ref(false)
 const snack = reactive({ show: false, text: '', color: 'success' })
 
 const showSnack = (text, color = 'success') => {
@@ -581,16 +597,9 @@ const salasFiltradas = computed(() => {
 // Reservations Logic
 const getReserva = (diaISO, classroomId, period) => store.getReservation(diaISO, classroomId, period)
 
-const getReservaText = (diaISO, classroomId, period) => {
-  const r = getReserva(diaISO, classroomId, period)
-  if (!r) return 'Livre'
-  const courseName = r.course_name || r.courses?.name || ''
-  return `${r.user_name}${courseName ? ' - ' + courseName : ''}`
-}
-
 const getReservaColor = (diaISO, classroomId, period) => {
   const r = getReserva(diaISO, classroomId, period)
-  if (!r) return 'grey-lighten-3'
+  if (!r) return 'grey-lighten-4'
   return stringToColor(r.user_id || r.user_name)
 }
 
@@ -719,6 +728,7 @@ const abrirReservaDialog = (dia, sala, periodoId) => {
 }
 
 const salvarReserva = async () => {
+  loading.value = true
   try {
     const selectedUser = usersStore.users.find(u => u.id === reservaForm.value.user_id) || authStore.user
 
@@ -760,6 +770,8 @@ const salvarReserva = async () => {
     dialogReserva.value = false
   } catch (err) {
     showSnack('Erro ao salvar reserva: ' + err.message, 'error')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -770,6 +782,7 @@ const removerReserva = async () => {
     : 'Deseja realmente excluir esta reserva?'
 
   abrirConfirmacao(title, msg, async () => {
+    loading.value = true
     try {
       if (bulkMode.value) {
         const payload = {
@@ -788,6 +801,8 @@ const removerReserva = async () => {
       dialogReserva.value = false
     } catch (err) {
       showSnack('Erro ao remover: ' + err.message, 'error')
+    } finally {
+      loading.value = false
     }
   }, 'error', 'mdi-delete')
 }
@@ -798,6 +813,7 @@ const transferirReserva = async (mode = 'single') => {
     return
   }
 
+  loading.value = true
   try {
     const payload = {
       from_classroom_id: reservaForm.value.classroom_id,
@@ -819,6 +835,8 @@ const transferirReserva = async (mode = 'single') => {
     dialogReserva.value = false
   } catch (err) {
     showSnack('Erro ao transferir: ' + err.message, 'error')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -836,6 +854,7 @@ const abrirDialogClassroom = (sala = null) => {
 }
 
 const salvarSala = async () => {
+  loading.value = true
   try {
     if (classroomForm.value.id) {
       await store.updateClassroom(classroomForm.value.id, classroomForm.value)
@@ -847,6 +866,8 @@ const salvarSala = async () => {
     dialogClassroom.value = false
   } catch (err) {
     showSnack('Erro ao salvar sala', 'error')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -855,12 +876,15 @@ const deletarSala = async () => {
     'Excluir Sala',
     'Deseja excluir esta sala e todas as suas reservas? Esta ação não pode ser desfeita.',
     async () => {
+      loading.value = true
       try {
         await store.deleteClassroom(classroomForm.value.id)
         showSnack('Sala excluída!')
         dialogClassroom.value = false
       } catch (err) {
         showSnack('Erro ao excluir sala', 'error')
+      } finally {
+        loading.value = false
       }
     },
     'error',
@@ -916,9 +940,15 @@ onMounted(() => {
 .tabela-wrapper { overflow-x: auto; overflow-y: auto; max-height: 70vh; border: 1px solid rgba(0,0,0,0.05); border-radius: 8px; }
 .tabela-semana { width: 100%; border-collapse: separate; border-spacing: 0; }
 .tabela-semana thead th { position: sticky; top: 0; background: #f8fafc; z-index: 2; padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-size: 0.875rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
-.tabela-semana td { padding: 8px; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; vertical-align: top; }
-.col-sala { min-width: 200px; background: #f8fafc; position: sticky; left: 0; z-index: 1; border-right: 2px solid #e2e8f0 !important; }
-.celula-periodos { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
+.tabela-semana td { padding: 4px; border-bottom: 1px solid #f9f1f1; border-right: 1px solid #f1f5f9; vertical-align: middle; }
+.tabela-semana tr { padding: 4px; border-bottom: 1px solid #ff0000; border-right: 4px solid #0482ff; vertical-align: middle; }
+.col-sala { width: 180px; min-width: 180px; background: #f8fafc; position: sticky; left: 0; z-index: 1; border-right: 2px solid #e2e8f0 !important; border-bottom: 3px solid #e2e8f0  !important; }
+.col-periodo-header { position: sticky; left: 180px; z-index: 2; background: #f8fafc; border-right: 2px solid #e2e8f0 !important; }
+.col-periodo { width: 100px; min-width: 100px; background: #f8fafc; position: sticky; left: 180px; z-index: 1; border-right: 2px solid #e2e8f0 !important; }
+thead th.col-sala, thead th.col-periodo-header { z-index: 3; }
+.celula-dia { max-width: 120px; }
+.line-height-1 { line-height: 1.2; }
+.sala-divider td { border-bottom: 3px solid #cbd5e1 !important; }
 .reservation-card { transition: transform 0.1s, box-shadow 0.1s; }
 .reservation-card:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 

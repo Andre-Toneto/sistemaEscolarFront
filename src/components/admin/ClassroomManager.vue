@@ -119,10 +119,13 @@ const save = async () => {
 
 const confirmDelete = async (room) => {
   if (!confirm(`Deseja realmente excluir a sala ${room.name}? Todas as reservas desta sala serão removidas.`)) return
+  loading.value = true
   try {
     await store.deleteClassroom(room.id)
   } catch (err) {
     console.error('Error deleting classroom:', err)
+  } finally {
+    loading.value = false
   }
 }
 

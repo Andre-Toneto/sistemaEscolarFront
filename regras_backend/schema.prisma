@@ -13,7 +13,7 @@ model users {
   name               String
   email              String               @unique(map: "User_email_key")
   password           String
-  birthDate          DateTime?
+  birthDate          DateTime?            @db.Date
   role               String
   isActive           Boolean              @default(true)
   createdAt          DateTime             @default(now())

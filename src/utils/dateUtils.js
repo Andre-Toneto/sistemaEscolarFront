@@ -9,7 +9,9 @@ export const toDateOnly = (d) => {
 
 export const fromDateOnly = (s) => {
   if (!s) return null
-  const [y, m, dd] = String(s).split('-').map(Number)
+  const dateStr = String(s).split('T')[0]
+  const [y, m, dd] = dateStr.split('-').map(Number)
+  if (isNaN(y) || isNaN(m) || isNaN(dd)) return null
   return new Date(y, m - 1, dd)
 }
 

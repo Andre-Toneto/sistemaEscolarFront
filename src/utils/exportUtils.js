@@ -133,3 +133,55 @@ export const exportOcorrenciasPDF = async (pessoa, curso, turma, itens) => {
     try { document.body.removeChild(container) } catch {}
   }
 }
+
+export const exportAniversariantesPDF = async (aniversariantes) => {
+  const titulo = `Aniversariantes do Mês de ${new Date().toLocaleDateString('pt-BR', { month: 'long' })}`
+
+  const container = document.createElement('div')
+  container.style.position = 'fixed'
+  container.style.left = '-10000px'
+  container.style.top = '0'
+  container.style.width = '800px'
+  container.style.background = '#fff'
+  container.innerHTML = `
+    <div style="font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #222;">
+      <div style="text-align:center; margin-bottom:24px;">
+        <h1 style="font-size:24px; color:#C1272C; margin-bottom:8px;">${titulo}</h1>
+        <p style="color:#666;">Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+      </div>
+      <table style="width:100%; border-collapse:collapse; font-size:14px;">
+        <thead>
+          <tr style="background:#f8f9fa;">
+            <th style="border:1px solid #dee2e6; padding:12px; text-align:left;">Dia</th>
+            <th style="border:1px solid #dee2e6; padding:12px; text-align:left;">Nome</th>
+            <th style="border:1px solid #dee2e6; padding:12px; text-align:left;">E-mail</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${aniversariantes.length ? aniversariantes.map(a => `
+            <tr>
+              <td style="border:1px solid #dee2e6; padding:12px; font-weight:bold;">${new Date(a.birthDate).getDate()}</td>
+              <td style="border:1px solid #dee2e6; padding:12px;">${a.name}</td>
+              <td style="border:1px solid #dee2e6; padding:12px; color:#555;">${a.email || 'N/A'}</td>
+            </tr>
+          `).join('') : '<tr><td colspan="3" style="border:1px solid #dee2e6; padding:24px; text-align:center;">Nenhum aniversariante encontrado</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `
+  document.body.appendChild(container)
+
+  try {
+    const canvas = await html2canvas(container, { scale: 2 })
+    const imgData = canvas.toDataURL('image/png')
+    const pdf = new jsPDF('p', 'mm', 'a4')
+    const imgProps = pdf.getImageProperties(imgData)
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight)
+    pdf.save(`aniversariantes_${new Date().getMonth() + 1}.pdf`)
+  } finally {
+    try { document.body.removeChild(container) } catch {}
+  }
+}
