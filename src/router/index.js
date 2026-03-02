@@ -27,11 +27,17 @@ const routes = [
   {
     path: "/carometro",
     component: Carometro,
+    meta: { requiresAuth: true, excludeFic: true }
+  },
+  {
+    path: "/mapa-sala",
+    component: () => import("@/views/mapa-sala/index.vue"),
     meta: { requiresAuth: true }
   },
   {
     path: "/users",
     component: () => import("@/views/users/index.vue"),
+    meta: { requiresAuth: true, adminOnly: true }
   },
   {
     path: "/admin",
@@ -47,10 +53,13 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
+  const role = (auth.user?.role || '').toLowerCase()
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    next("/login")
+    next({ path: "/login", query: { redirect: to.fullPath } })
   } else if (to.meta.adminOnly && !auth.isAdmin) {
+    next("/home")
+  } else if (to.meta.excludeFic && role === 'fic') {
     next("/home")
   } else {
     next()

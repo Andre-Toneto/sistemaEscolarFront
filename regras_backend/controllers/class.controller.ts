@@ -4,6 +4,10 @@ import * as classService from "../services/class.service"
 export async function create(request: FastifyRequest, reply: FastifyReply) {
   try {
     const turma = await classService.createClass(request.body)
+    
+    const io = request.server.io
+    io.emit("class:changed")
+    
     return reply.status(201).send(turma)
   } catch (error) {
     console.error(error)
@@ -32,6 +36,10 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
   try {
     const { id } = request.params as any
     const turma = await classService.updateClass(id, request.body)
+
+    const io = request.server.io
+    io.emit("class:changed")
+    
     return reply.send(turma)
   } catch (error) {
     console.error(error)
@@ -42,11 +50,19 @@ export async function update(request: FastifyRequest, reply: FastifyReply) {
 export async function archive(request: FastifyRequest, reply: FastifyReply) {
   const { id } = request.params as any
   const turma = await classService.archiveClass(id)
+
+  const io = request.server.io
+  io.emit("class:changed")
+
   return reply.send(turma)
 }
 
 export async function remove(request: FastifyRequest, reply: FastifyReply) {
   const { id } = request.params as any
   await classService.deleteClass(id)
+
+  const io = request.server.io
+  io.emit("class:changed")
+
   return reply.status(204).send()
 }

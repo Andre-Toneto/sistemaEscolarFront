@@ -13,7 +13,7 @@ model users {
   name               String
   email              String               @unique(map: "User_email_key")
   password           String
-  birthDate          DateTime?
+  birthDate          DateTime?            @db.Date
   role               String
   isActive           Boolean              @default(true)
   createdAt          DateTime             @default(now())
@@ -43,18 +43,19 @@ model classrooms {
   name               String               @db.VarChar(150)
   capacity           Int?
   type               String?              @db.VarChar(100)
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @db.Timestamptz(6)
   reserve_classrooms reserve_classrooms[]
 }
 
 model courses {
-  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String               @db.VarChar(150)
-  color              String?              @db.VarChar(50)
-  updated_at         DateTime?            @default(now()) @db.Timestamp(6)
-  created_at         DateTime?            @default(now()) @db.Timestamp(6)
-  classes            classes[]
-  reserve_classrooms reserve_classrooms[]
-  students           students[]
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String     @db.VarChar(150)
+  color      String?    @db.VarChar(50)
+  updated_at DateTime?  @default(now()) @db.Timestamp(6)
+  created_at DateTime?  @default(now()) @db.Timestamp(6)
+  classes    classes[]
+  students   students[]
 }
 
 model students {
@@ -85,18 +86,21 @@ model students {
 }
 
 model reserve_classrooms {
-  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  classrooms_id String      @db.Uuid
-  data          DateTime    @db.Date
-  period        period_enum
-  course_id     String?     @db.Uuid
-  user_id       String      @db.VarChar(255)
-  created_at    DateTime?   @default(now()) @db.Timestamptz(6)
-  classrooms    classrooms  @relation(fields: [classrooms_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  courses       courses?    @relation(fields: [course_id], references: [id], onUpdate: NoAction)
-  users         users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classroom_id    String      @db.Uuid
+  data            DateTime    @db.Date
+  period          period_enum
+  user_id         String      @db.VarChar(255)
+  created_at      DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?   @db.Timestamptz(6)
+  user_name       String      @db.VarChar(200)
+  course_type     String      @db.VarChar(100)
+  number_students Int?        @db.SmallInt
+  course_name     String?     @db.VarChar(150)
+  classrooms      classrooms  @relation(fields: [classroom_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reserve_classrooms_classrooms_id_fkey")
+  users           users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@unique([classrooms_id, data, period])
+  @@unique([classroom_id, data, period], map: "reserve_classrooms_classrooms_id_data_period_key")
 }
 
 model occurrences {

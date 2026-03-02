@@ -56,7 +56,16 @@ const handleSave = async (formData) => {
     delete payload.passwordConfirm
 
     if (payload.birthDate) {
-      payload.birthDate = new Date(payload.birthDate).toISOString()
+      // Send birthDate as YYYY-MM-DD string as backend now uses DATE column
+      const [y, m, d] = payload.birthDate.split('-').map(Number)
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+        // We keep it as YYYY-MM-DD to be consistent with the new DATE format in DB
+        // If the backend still needs ISO, it will parse this string correctly.
+        // But sending it raw is safer for date-only columns.
+        payload.birthDate = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      } else {
+        delete payload.birthDate
+      }
     }
 
     if (editingId.value) {
@@ -77,13 +86,13 @@ const handleSave = async (formData) => {
 const editUser = (user) => {
   editingId.value = user.id
   currentForm.value = {
-    name: user.name,
-    email: user.email,
-    nif: user.nif,
-    birthDate: user.birthDate ? user.birthDate.split("T")[0] : "",
+    name: user.name || "",
+    email: user.email || "",
+    nif: user.nif || "",
+    birthDate: user.birthDate ? String(user.birthDate).split("T")[0] : "",
     password: "",
     passwordConfirm: "",
-    role: user.role
+    role: user.role || "regular"
   }
 }
 
@@ -95,11 +104,14 @@ const cancelEdit = () => {
 
 const deleteUser = async (id) => {
   if (!confirm("Tem certeza que deseja excluir este usuário?")) return
+  loading.value = true
   try {
     await store.deleteUser(id)
     showSnack("Usuário excluído")
   } catch (err) {
     showSnack("Erro ao excluir usuário", 'error')
+  } finally {
+    loading.value = false
   }
 }
 

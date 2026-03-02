@@ -96,8 +96,9 @@ async function handleLogin() {
 
     // Disparar evento de mudança de sessão para atualizar outros componentes (legado)
     window.dispatchEvent(new CustomEvent('carometro-session-changed'))
-    
-    router.push("/users")
+
+    const redirect = router.currentRoute.value.query.redirect || "/home"
+    router.push(redirect)
   } catch (err) {
     console.error('Erro no login:', err)
     error.value = err.response?.data?.message || "Credenciais inválidas ou erro no servidor"

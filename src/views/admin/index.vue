@@ -10,6 +10,7 @@
     <v-tabs v-model="tab" color="senai-red" class="mb-4">
       <v-tab value="dashboard">Dashboard</v-tab>
       <v-tab value="academic">Cursos & Turmas</v-tab>
+      <v-tab value="classrooms">Salas</v-tab>
       <v-tab value="students">Alunos</v-tab>
       <v-tab value="photos">Fotos em Lote</v-tab>
     </v-tabs>
@@ -35,6 +36,11 @@
       <!-- Alunos -->
       <v-window-item value="students">
         <StudentManager ref="studentManagerRef" @open-import="importDialog = true" />
+      </v-window-item>
+
+      <!-- Salas -->
+      <v-window-item value="classrooms">
+        <ClassroomManager />
       </v-window-item>
 
       <!-- Fotos em Lote -->
@@ -68,6 +74,7 @@ import AdminDashboard from '@/components/admin/AdminDashboard.vue'
 import CourseManager from '@/components/admin/CourseManager.vue'
 import ClassManager from '@/components/admin/ClassManager.vue'
 import StudentManager from '@/components/admin/StudentManager.vue'
+import ClassroomManager from '@/components/admin/ClassroomManager.vue'
 import StudentImportDialog from '@/components/admin/StudentImportDialog.vue'
 import PhotoBatchUploadDialog from '@/components/admin/PhotoBatchUploadDialog.vue'
 

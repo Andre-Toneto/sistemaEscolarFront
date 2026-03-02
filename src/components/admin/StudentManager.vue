@@ -266,12 +266,15 @@ const save = async () => {
 
 const confirmDelete = async (student) => {
   if (!confirm(`Excluir aluno ${student.name}?`)) return
+  loading.value = true
   try {
     await carometroService.deleteStudent(student.id)
     await fetchStudents()
     emit('updated')
   } catch (err) {
     console.error('Error deleting student:', err)
+  } finally {
+    loading.value = false
   }
 }
 

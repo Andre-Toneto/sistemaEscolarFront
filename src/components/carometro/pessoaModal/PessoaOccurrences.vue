@@ -60,8 +60,10 @@
           </template>
         </v-list-item>
       </v-list>
-      <v-list v-else class="pa-8 text-center text-grey" :height="isAdmin ? 210 : ''">
-        Nenhuma ocorrência encontrada.
+      <v-list v-else class="pa-8 text-center text-grey" :height="isAdmin ? 210 : 300">
+        <v-list-item>
+          Nenhuma ocorrência encontrada.
+        </v-list-item>
       </v-list>
     </v-card-text>
 
