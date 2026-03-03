@@ -35,13 +35,13 @@
             />
           </v-col>
           <v-col cols="12" md="6" class="text-right d-flex ga-2 justify-end">
-            <v-btn color="info" variant="outlined" prepend-icon="mdi-calendar-range" @click="abrirBulkGeral">
+            <v-btn v-if="!isSecretariaAdmin" color="info" variant="outlined" prepend-icon="mdi-calendar-range" @click="abrirBulkGeral">
               RESERVAr
             </v-btn>
             <v-btn color="success" variant="outlined" prepend-icon="mdi-file-export" @click="exportarCSV">
               Exportar
             </v-btn>
-            <v-btn v-if="isAdmin" color="primary" variant="elevated" prepend-icon="mdi-plus" @click="abrirDialogClassroom()">
+            <v-btn v-if="isAdmin && !isSecretariaAdmin" color="primary" variant="elevated" prepend-icon="mdi-plus" @click="abrirDialogClassroom()">
               Nova Sala
             </v-btn>
           </v-col>
@@ -76,7 +76,7 @@
                     <td v-if="pIdx === 0" class="col-sala" :rowspan="store.PERIODOS.length">
                       <div class="d-flex align-center justify-space-between">
                         <div class="font-weight-bold text-h6">{{ sala.name }}</div>
-                        <v-btn v-if="isAdmin" icon="mdi-pencil" variant="text" size="x-small" @click="abrirDialogClassroom(sala)" />
+                        <v-btn v-if="isAdmin && !isSecretariaAdmin" icon="mdi-pencil" variant="text" size="x-small" @click="abrirDialogClassroom(sala)" />
                       </div>
                       <div class="text-caption text-grey">{{ sala.type || 'Geral' }} - Cap: {{ sala.capacity || 'N/A' }}</div>
                     </td>
@@ -95,8 +95,8 @@
                         rounded="lg"
                         min-height="50"
                         max-widht="100px"
-                        class="pa-2 cursor-pointer reservation-card d-flex flex-column justify-center"
-                        @click="abrirReservaDialog(toDateOnly(d), sala, p.id)"
+                        :class="['pa-2', !isSecretariaAdmin ? 'cursor-pointer' : '', 'reservation-card', 'd-flex', 'flex-column', 'justify-center']"
+                        @click="!isSecretariaAdmin ? abrirReservaDialog(toDateOnly(d), sala, p.id) : null"
                         elevation="0"
                       >
                         <template v-if="getReserva(toDateOnly(d), sala.id, p.id)">
@@ -397,32 +397,34 @@
           <v-btn variant="text" @click="dialogReserva = false">Fechar</v-btn>
           <v-spacer />
 
-          <!-- Actions for Bulk Mode Tabs -->
-          <template v-if="bulkMode && !isEdicao">
-            <v-btn v-if="activeTab === 0" color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
-              Reservar Período
-            </v-btn>
-            <v-btn v-if="activeTab === 1" color="error" variant="elevated" @click="removerReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
-              Remover do Período
-            </v-btn>
-            <v-btn v-if="activeTab === 2" color="info" variant="elevated" @click="transferirReserva('period')" :disabled="!reservaForm.classroom_id || !reservaForm.target_classroom_id" :loading="loading">
-              Transferir Período
-            </v-btn>
-          </template>
-
-          <!-- Actions for Single Mode -->
-          <template v-else>
-            <template v-if="isEdicao && podeEditar">
-              <v-btn color="warning" variant="text" @click="transferMode = !transferMode">
-                {{ transferMode ? 'Cancelar Transferir' : 'Transferir' }}
+          <template v-if="!isSecretariaAdmin">
+            <!-- Actions for Bulk Mode Tabs -->
+            <template v-if="bulkMode && !isEdicao">
+              <v-btn v-if="activeTab === 0" color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
+                Reservar Período
               </v-btn>
-              <v-btn color="error" variant="text" @click="removerReserva" :loading="loading">Remover</v-btn>
-              <v-btn color="primary" variant="elevated" @click="salvarReserva" :loading="loading">Atualizar</v-btn>
+              <v-btn v-if="activeTab === 1" color="error" variant="elevated" @click="removerReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
+                Remover do Período
+              </v-btn>
+              <v-btn v-if="activeTab === 2" color="info" variant="elevated" @click="transferirReserva('period')" :disabled="!reservaForm.classroom_id || !reservaForm.target_classroom_id" :loading="loading">
+                Transferir Período
+              </v-btn>
             </template>
-            <template v-else-if="!isEdicao">
-              <v-btn color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
-                Reservar
-              </v-btn>
+
+            <!-- Actions for Single Mode -->
+            <template v-else>
+              <template v-if="isEdicao && podeEditar">
+                <v-btn color="warning" variant="text" @click="transferMode = !transferMode">
+                  {{ transferMode ? 'Cancelar Transferir' : 'Transferir' }}
+                </v-btn>
+                <v-btn color="error" variant="text" @click="removerReserva" :loading="loading">Remover</v-btn>
+                <v-btn color="primary" variant="elevated" @click="salvarReserva" :loading="loading">Atualizar</v-btn>
+              </template>
+              <template v-else-if="!isEdicao">
+                <v-btn color="primary" variant="elevated" @click="salvarReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
+                  Reservar
+                </v-btn>
+              </template>
             </template>
           </template>
         </v-card-actions>
@@ -517,6 +519,7 @@ const carometroStore = useCarometroStore()
 const usersStore = useUsersStore()
 
 const isAdmin = computed(() => authStore.isAdmin)
+const isSecretariaAdmin = computed(() => authStore.isSecretariaAdmin)
 const modo = ref('semana')
 const baseDate = ref(new Date())
 const salaFiltro = ref('')

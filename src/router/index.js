@@ -6,6 +6,7 @@ import Login from "@/views/login.vue"
 import Carometro from "@/views/carometro/index.vue"
 
 
+
 const routes = [
   {
     path: "/",
@@ -32,6 +33,11 @@ const routes = [
   {
     path: "/mapa-sala",
     component: () => import("@/views/mapa-sala/index.vue"),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: "/mapa-sala-bi",
+    component: () => import("@/views/mapa-sala/mapa-sala-BI.vue"),
     meta: { requiresAuth: true }
   },
   {

@@ -55,3 +55,7 @@ export function updateStudent(id, studentData) {
 export function deleteStudent(id) {
   return api.delete(`/students/${id}`)
 }
+
+export function getStudent(id) {
+  return api.get(`/students/${id}`)
+}

@@ -21,10 +21,10 @@
         <v-col cols="12" sm="4">
           <v-text-field v-model="form.passwordConfirm" label="Confirmar Senha" type="password" :rules="rules.passwordConfirm" variant="outlined" />
         </v-col>
-        <v-col cols="12" sm="6">
+        <v-col cols="12" :sm="form.role === 'admin' ? 4 : 6">
           <v-text-field v-model="form.birthDate" label="Data de Nascimento" :rules="rules.birthDate" type="date" variant="outlined" />
         </v-col>
-        <v-col cols="12" sm="6">
+        <v-col cols="12" :sm="form.role === 'admin' ? 4 : 6">
           <v-select
             v-model="form.role"
             :items="['admin', 'fic', 'regular', 'secretaria']"
@@ -32,11 +32,20 @@
             variant="outlined"
           />
         </v-col>
+        <v-col cols="12" sm="4" v-if="form.role === 'admin'">
+          <v-select
+            v-model="form.sub_role"
+            :items="subRoles"
+            label="Sub-tipo de Admin"
+            variant="outlined"
+            prepend-inner-icon="mdi-account-cog"
+          />
+        </v-col>
       </v-row>
     </v-form>
 
     <v-card-actions>
-      <v-btn color="primary" @click="save" :loading="loading">
+      <v-btn color="senai-red" class="text-white" @click="save" :loading="loading">
         {{ editingId ? "Atualizar" : "Criar" }}
       </v-btn>
       <v-btn v-if="editingId" color="grey" variant="text" @click="cancel">
@@ -66,8 +75,16 @@ const form = reactive({
   birthDate: "",
   password: "",
   passwordConfirm: "",
-  role: "regular"
+  role: "regular",
+  sub_role: null
 })
+
+const subRoles = [
+  { title: 'Admin Geral', value: 'admin_geral' },
+  { title: 'Admin Secretaria', value: 'admin_secretaria' },
+  { title: 'Admin Pedagógico', value: 'admin_pedagogico' },
+  { title: 'Admin FIC', value: 'admin_fic' }
+]
 
 const rules = {
   name: [v => !!v || 'Nome é obrigatório'],
@@ -93,14 +110,21 @@ const reset = () => {
     birthDate: "",
     password: "",
     passwordConfirm: "",
-    role: "regular"
+    role: "regular",
+    sub_role: null
   })
 }
 
 const save = async () => {
   const { valid: formValid } = await userForm.value.validate()
   if (!formValid) return
-  emit('save', { ...form })
+  
+  const payload = { ...form }
+  if (payload.role !== 'admin') {
+    payload.sub_role = null
+  }
+  
+  emit('save', payload)
 }
 
 const cancel = () => {

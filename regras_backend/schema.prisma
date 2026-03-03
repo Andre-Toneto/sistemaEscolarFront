@@ -148,6 +148,8 @@ model student_referrals {
   created_at                                     DateTime?                   @default(now()) @db.Timestamptz(6)
   updated_at                                     DateTime?                   @default(now()) @db.Timestamptz(6)
   finalized_at                                   DateTime?                   @db.Timestamptz(6)
+  course_name                                    String?                     @db.VarChar(150)
+  class_name                                     String?                     @db.VarChar(150)
   student_referral_comments                      student_referral_comments[]
   users_student_referrals_assigned_to_idTousers  users?                      @relation("student_referrals_assigned_to_idTousers", fields: [assigned_to_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_student_referrals_created_by_idTousers   users                       @relation("student_referrals_created_by_idTousers", fields: [created_by_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

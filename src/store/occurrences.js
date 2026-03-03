@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import * as encaminhamentosService from '@/services/encaminhamentos.services'
+import * as occurrencesService from '@/services/occurrences.services'
 
 export const useOccurrencesStore = defineStore('occurrences', {
   state: () => ({
@@ -11,7 +11,7 @@ export const useOccurrencesStore = defineStore('occurrences', {
     async fetchOccurrences() {
       this.loading = true
       try {
-        const data = await encaminhamentosService.getEncaminhamentos('Todos', 'Todos')
+        const data = await occurrencesService.getOccurrences()
         this.occurrences = data
       } catch (err) {
         this.error = err.message
@@ -19,18 +19,21 @@ export const useOccurrencesStore = defineStore('occurrences', {
         this.loading = false
       }
     },
+    async fetchData() {
+      return this.fetchOccurrences()
+    },
     async createOccurrence(payload) {
-      const newOccurrence = await encaminhamentosService.createEncaminhamento(payload)
+      const newOccurrence = await occurrencesService.createOccurrence(payload)
       await this.fetchOccurrences()
       return newOccurrence
     },
     async updateOccurrence(id, payload) {
-      const updated = await encaminhamentosService.updateEncaminhamento(id, payload)
+      const updated = await occurrencesService.updateOccurrence(id, payload)
       await this.fetchOccurrences()
       return updated
     },
     async deleteOccurrence(id) {
-      await encaminhamentosService.deleteEncaminhamento(id)
+      await occurrencesService.deleteOccurrence(id)
       await this.fetchOccurrences()
     },
     getOccurrencesByStudentId(studentId) {

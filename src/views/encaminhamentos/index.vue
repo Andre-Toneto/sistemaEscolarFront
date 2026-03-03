@@ -4,11 +4,15 @@
       <v-col cols="12">
         <v-card elevation="8" rounded="xl" class="pa-4 mb-4">
           <v-tabs v-model="tab" density="comfortable" color="senai-red">
-            <v-tab value="abertos" @click="changeTab('abertos')">
+            <v-tab value="aberto">
               <v-icon start>mdi-folder-open</v-icon>
               Abertos
             </v-tab>
-            <v-tab value="finalizados" @click="changeTab('finalizados')">
+            <v-tab value="em andamento">
+              <v-icon start>mdi-progress-check</v-icon>
+              Em Andamento
+            </v-tab>
+            <v-tab value="finalizado">
               <v-icon start>mdi-check-circle</v-icon>
               Finalizados
             </v-tab>
@@ -18,16 +22,18 @@
     </v-row>
 
     <v-row>
-      <v-col cols="12" md="5">
-        <div v-if="!isSecretaria">
-          <v-card elevation="8" rounded="xl" class="pa-4">
-            <v-card-title class="text-h6 text-senai-red pa-0">Novo encaminhamento</v-card-title>
-            <v-card-subtitle class="mb-2">Preencha os dados abaixo para registrar um encaminhamento</v-card-subtitle>
-            <v-card-text>
+      <!-- Formulário de Criação ou Dashboard Secretaria -->
+      <v-col cols="12" md="4">
+        <template v-if="!isSecretaria">
+          <v-card elevation="8" rounded="xl" class="pa-4 sticky-card">
+            <v-card-title class="text-h6 text-senai-red pa-0 mb-1">Novo encaminhamento</v-card-title>
+            <v-card-subtitle class="pa-0 mb-4">Registre um novo encaminhamento para a secretaria</v-card-subtitle>
+            <v-card-text class="pa-0">
               <v-form ref="formRef" v-model="formValid" @submit.prevent="criarEncaminhamento">
                 <v-text-field
-                  v-model="form.aluno"
+                  v-model="form.student_name"
                   label="Nome do aluno"
+                  placeholder="Aluno matriculado ou não"
                   variant="outlined"
                   density="comfortable"
                   prepend-inner-icon="mdi-account"
@@ -35,43 +41,35 @@
                   class="mb-3"
                 />
 
-                <v-row>
-                  <v-col cols="12" md="5">
-                    <v-select
-                      v-model="form.courseType"
-                      :items="courseTypes"
-                      label="Tipo do curso"
+                <v-row dense>
+                  <v-col cols="12" sm="7">
+                    <v-text-field
+                      v-model="form.course_name"
+                      label="Curso"
+                      placeholder="Ex: Técnico em Mecânica"
                       variant="outlined"
                       density="comfortable"
-                      prepend-inner-icon="mdi-format-list-bulleted"
-                      :rules="[v => !!v || 'Obrigatório']"
+                      prepend-inner-icon="mdi-book-education"
+                      class="mb-3"
                     />
                   </v-col>
-                  <v-col cols="12" md="7">
+                  <v-col cols="12" sm="5">
                     <v-text-field
-                      v-model="form.cursoNome"
-                      label="Nome do curso"
+                      v-model="form.class_name"
+                      label="Turma"
+                      placeholder="Ex: 1MT"
                       variant="outlined"
                       density="comfortable"
-                      prepend-inner-icon="mdi-book-open"
-                      :rules="[v => !!v || 'Obrigatório']"
+                      prepend-inner-icon="mdi-account-group-outline"
+                      class="mb-3"
                     />
                   </v-col>
                 </v-row>
 
                 <v-text-field
-                  v-model="form.turma"
-                  label="Turma"
-                  variant="outlined"
-                  density="comfortable"
-                  prepend-inner-icon="mdi-account-multiple"
-                  :rules="[v => !!v || 'Obrigatório']"
-                  class="mb-3"
-                />
-
-                <v-text-field
-                  v-model="form.motivo"
+                  v-model="form.reason"
                   label="Motivo"
+                  placeholder="Ex: Documentação pendente, Indisciplina..."
                   variant="outlined"
                   density="comfortable"
                   prepend-inner-icon="mdi-comment-alert"
@@ -80,8 +78,9 @@
                 />
 
                 <v-textarea
-                  v-model="form.descricao"
-                  label="Descrição"
+                  v-model="form.description"
+                  label="Descrição detalhada"
+                  placeholder="Descreva o que aconteceu ou o que é necessário..."
                   variant="outlined"
                   density="comfortable"
                   prepend-inner-icon="mdi-text"
@@ -90,234 +89,180 @@
                   class="mb-4"
                 />
 
-                <v-btn type="submit" :loading="saving" :disabled="!formValid" color="senai-red" block rounded>
+                <v-btn type="submit" :loading="saving" :disabled="!formValid" color="senai-red" block rounded="lg" size="large" elevation="2">
                   <v-icon start>mdi-send</v-icon>
-                  Encaminhar
+                  Enviar Encaminhamento
                 </v-btn>
               </v-form>
             </v-card-text>
           </v-card>
-        </div>
-        <div v-else>
-          <v-card elevation="2" rounded="lg" class="pa-4">
-            <v-card-title class="text-h6">Área da Secretaria</v-card-title>
+        </template>
+        <template v-else>
+          <v-card elevation="8" rounded="xl" class="pa-4 bg-senai-red text-white">
+            <v-card-title class="text-h6">Olá, {{ user.name }}!</v-card-title>
             <v-card-text>
-              <p class="text-body-2 text-medium-emphasis">A secretaria tem acesso a todos os encaminhamentos. </p>
-              <p><strong>Pendentes:</strong> {{ counts.total }} </p>
-              <div class="mt-2">
-                <v-chip v-for="ct in courseTypes" :key="ct" size="small" class="ma-1">
-                  {{ ct }} • {{ counts.byType[ct] || 0 }}
-                </v-chip>
-              </div>
+              <p class="mb-4 opacity-80">Gerencie aqui os atendimentos da secretaria.</p>
+              
+              <v-row dense>
+                <v-col cols="6">
+                  <v-card color="white" class="text-senai-red text-center pa-2" rounded="lg">
+                    <div class="text-h4 font-weight-bold">{{ countAbertos }}</div>
+                    <div class="text-caption text-uppercase">Abertos</div>
+                  </v-card>
+                </v-col>
+                <v-col cols="6">
+                  <v-card color="white" class="text-senai-red text-center pa-2" rounded="lg">
+                    <div class="text-h4 font-weight-bold">{{ countMeusAndamento }}</div>
+                    <div class="text-caption text-uppercase">Meus Atendimentos</div>
+                  </v-card>
+                </v-col>
+              </v-row>
             </v-card-text>
           </v-card>
-        </div>
+        </template>
       </v-col>
 
-      <v-col cols="12" md="7">
+      <!-- Lista de Encaminhamentos -->
+      <v-col cols="12" md="8">
         <v-card elevation="8" rounded="xl" class="pa-4">
-          <v-card-title class="d-flex align-center justify-space-between">
-            <span class="text-h6 text-senai-red">Encaminhamentos — {{ tabLabel }}</span>
-            <div class="d-flex align-center">
+          <v-card-title class="d-flex align-center justify-space-between flex-wrap ga-2 pa-0 mb-4">
+            <span class="text-h6 text-senai-red">
+              <v-icon color="senai-red" start>{{ currentTabIcon }}</v-icon>
+              {{ currentTabTitle }}
+            </span>
+            <div class="d-flex align-center ga-2">
               <v-text-field
-                v-model="termoBusca"
-                label="Pesquisar..."
+                v-model="search"
+                label="Buscar..."
                 variant="outlined"
                 density="compact"
                 hide-details
                 prepend-inner-icon="mdi-magnify"
-                class="mr-4"
-                style="max-width: 300px"
+                style="max-width: 250px"
                 clearable
               />
-              <v-btn variant="text" color="senai-red" @click="carregar" :loading="loading">
-                <v-icon start>mdi-refresh</v-icon>
-                Atualizar
+              <v-btn icon color="senai-red" variant="text" @click="carregar" :loading="loading">
+                <v-icon>mdi-refresh</v-icon>
               </v-btn>
             </div>
           </v-card-title>
-          <v-card-text>
-            <div class="mb-3 d-flex align-center gap-2 flex-wrap">
-              <v-chip
-                v-for="ct in ['Todos', ...courseTypes]"
-                :key="ct"
-                :color="selectedCourseType === ct ? 'senai-red' : 'default'"
-                :variant="selectedCourseType === ct ? 'flat' : 'outlined'"
-                size="small"
-                @click="selectedCourseType = ct"
-              >
-                {{ ct }} <span v-if="counts.byType && counts.byType[ct] && ct !== 'Todos'"> • {{ counts.byType[ct] }}</span>
-              </v-chip>
+
+          <v-card-text class="pa-0">
+            <div v-if="loading" class="text-center py-12">
+              <v-progress-circular indeterminate color="senai-red" size="64" />
+              <p class="text-medium-emphasis mt-4">Buscando encaminhamentos...</p>
             </div>
 
-            <div v-if="loading" class="text-center py-8">
-              <v-progress-circular indeterminate color="senai-red" size="56" />
-              <p class="text-medium-emphasis mt-2">Carregando...</p>
+            <div v-else-if="filteredItems.length === 0" class="text-center py-12 border rounded-xl bg-grey-lighten-4">
+              <v-icon size="80" color="grey-lighten-2" class="mb-2">mdi-inbox-outline</v-icon>
+              <p class="text-body-1 text-medium-emphasis">Nenhum encaminhamento nesta categoria.</p>
             </div>
 
-            <div v-else-if="filteredItems.length === 0" class="text-center py-12">
-              <v-icon size="80" color="grey-lighten-2" class="mb-2">mdi-inbox</v-icon>
-              <p class="text-body-2 text-medium-emphasis mb-0">Nenhum encaminhamento encontrado.</p>
+            <div v-else class="referrals-list">
+              <ReferralCard
+                v-for="item in filteredItems"
+                :key="item.id"
+                :item="item"
+                :user="user"
+                :is-secretaria="isSecretaria"
+                :is-admin="isAdmin"
+                @attend="atenderEncaminhamento"
+                @finalize="abrirFinalizar"
+                @view="abrirDetalhes"
+              />
             </div>
-
-            <v-list v-else lines="two" density="comfortable">
-              <v-list-item v-for="e in filteredItems" :key="e.id" rounded="lg" class="mb-2" :subtitle="e.descricao">
-                <template #prepend>
-                  <v-avatar color="senai-light-red">
-                    <v-icon color="senai-red">{{ tab === 'abertos' ? 'mdi-folder-open' : 'mdi-check-circle' }}</v-icon>
-                  </v-avatar>
-                </template>
-                <v-list-item-title class="font-weight-medium">
-                  {{ e.aluno }} • {{ e.courseType }} • {{ e.cursoNome }} • {{ e.turma }}
-                </v-list-item-title>
-                <v-list-item-subtitle>
-                  <div><span class="text-medium-emphasis">Motivo: </span>{{ e.motivo }}</div>
-                  <div class="text-caption">
-                    Criado por: {{ e.user_name || e.createdByName || 'N/A' }}
-                    <span v-if="e.finalizedByName"> • Finalizado por: {{ e.finalizedByName }} em {{ e.finalizedAt ? new Date(e.finalizedAt).toLocaleString() : '' }}</span>
-                    <span v-else-if="e.status === 'finalizado'"> • Finalizado</span>
-                  </div>
-                  <div v-if="e.response" class="mt-1"><strong>Resposta (Secretaria):</strong> {{ e.response }}</div>
-                </v-list-item-subtitle>
-                <template #append>
-                  <div class="d-flex align-center ga-2">
-                    <v-chip size="x-small" :color="tab === 'abertos' ? 'warning' : 'success'" variant="flat" class="mr-2">
-                      {{ e.status }}
-                    </v-chip>
-
-                    <v-btn size="small" color="info" variant="text" @click.stop="abrirDetalhes(e)">
-                      <v-icon>mdi-eye</v-icon>
-                    </v-btn>
-                    <v-btn v-if="canEdit(e)" size="small" color="primary" variant="text" @click.stop="abrirEdicao(e)">
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                    <v-btn v-if="canEdit(e)" size="small" color="error" variant="text" @click.stop="confirmDelete(e)">
-                      <v-icon>mdi-delete</v-icon>
-                    </v-btn>
-
-                    <v-btn v-if="tab === 'abertos' && isSecretaria" size="small" color="success" variant="outlined" @click.stop="abrirFinalizar(e)">
-                      <v-icon start size="small">mdi-check</v-icon>
-                      Finalizar (Secretaria)
-                    </v-btn>
-
-                    <v-btn v-else-if="tab === 'abertos'" size="small" color="success" variant="outlined" @click.stop="finalizar(e)">
-                      <v-icon start size="small">mdi-check</v-icon>
-                      Finalizar
-                    </v-btn>
-                  </div>
-                </template>
-              </v-list-item>
-            </v-list>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Dialogs remain similar but use new services -->
-    <v-dialog v-model="editAberto" max-width="720">
-      <v-card rounded="lg">
-        <v-card-title>Editar encaminhamento</v-card-title>
-        <v-card-text>
-          <v-form ref="editFormRef" @submit.prevent="salvarEdicao">
-            <v-text-field v-model="editForm.aluno" label="Nome do aluno" variant="outlined" class="mb-3" />
-            <v-row>
-              <v-col cols="12" md="5">
-                <v-select v-model="editForm.courseType" :items="courseTypes" label="Tipo do curso" />
-              </v-col>
-              <v-col cols="12" md="7">
-                <v-text-field v-model="editForm.cursoNome" label="Nome do curso" />
-              </v-col>
-            </v-row>
-            <v-text-field v-model="editForm.turma" label="Turma" class="mb-3" />
-            <v-text-field v-model="editForm.motivo" label="Motivo" class="mb-3" />
-            <v-textarea v-model="editForm.descricao" label="Descrição" rows="4" class="mb-3" />
-            <div class="d-flex justify-end">
-              <v-btn variant="text" color="senai-red" @click="editAberto = false" :disabled="saving" class="mr-2">Cancelar</v-btn>
-              <v-btn type="submit" :loading="saving" color="senai-red">Salvar</v-btn>
-            </div>
-          </v-form>
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <!-- Diálogo de Detalhes e Comentários -->
+    <ReferralDetailsDialog
+      v-model="detailsDialog"
+      :item="selectedItem"
+      :user="user"
+      :is-admin="isAdmin"
+      :commenting="commenting"
+      @add-comment="enviarComentario"
+      @finalize="abrirFinalizar"
+    />
 
-    <v-dialog v-model="deleteConfirm" max-width="480">
-      <v-card>
-        <v-card-title>Confirmar exclusão</v-card-title>
-        <v-card-text>Tem certeza que deseja excluir este encaminhamento?</v-card-text>
-        <v-card-actions>
-          <v-btn variant="text" color="senai-red" @click="deleteConfirm = false">Cancelar</v-btn>
-          <v-btn variant="text" color="error" @click="executarDelete">Excluir</v-btn>
+    <!-- Diálogo para Finalizar -->
+    <v-dialog v-model="finalizeDialog" max-width="500">
+      <v-card rounded="xl">
+        <v-card-title class="text-h6 font-weight-bold">Finalizar Encaminhamento</v-card-title>
+        <v-card-text>
+          <p class="mb-4">Deseja finalizar o encaminhamento de <strong>{{ itemToFinalize?.student_name }}</strong>?</p>
+          <v-textarea
+            v-model="finalizeFeedback"
+            label="Comentário final (opcional)"
+            placeholder="Alguma observação final sobre o encerramento?"
+            variant="outlined"
+            density="comfortable"
+            rows="3"
+          />
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer />
+          <v-btn variant="text" @click="finalizeDialog = false">Cancelar</v-btn>
+          <v-btn color="success" variant="flat" :loading="saving" @click="confirmarFinalizacao">Finalizar Agora</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="finalizeDialog" max-width="720">
-      <v-card>
-        <v-card-title>Finalizar encaminhamento (Secretaria)</v-card-title>
-        <v-card-text>
-          <p>Insira a resposta da secretaria antes de finalizar:</p>
-          <v-textarea v-model="finalizeResponse" rows="4" label="Resposta" />
-        </v-card-text>
-        <v-card-actions>
-          <v-btn variant="text" color="senai-red" @click="finalizeDialog = false">Cancelar</v-btn>
-          <v-btn variant="text" color="success" @click="executarFinalizar">Finalizar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-dialog v-model="viewAberto" max-width="720">
-      <v-card>
-        <v-card-title>Detalhes do encaminhamento</v-card-title>
-        <v-card-text>
-          <div v-if="viewItem">
-            <p><strong>Aluno:</strong> {{ viewItem.aluno }}</p>
-            <p><strong>Curso:</strong> {{ viewItem.courseType }} - {{ viewItem.cursoNome }}</p>
-            <p><strong>Turma:</strong> {{ viewItem.turma }}</p>
-            <p><strong>Motivo:</strong> {{ viewItem.motivo }}</p>
-            <p><strong>Descrição:</strong><br/>{{ viewItem.descricao }}</p>
-            <p v-if="viewItem.response"><strong>Resposta (Secretaria):</strong><br/>{{ viewItem.response }}</p>
-            <p class="text-caption">Criado por: {{ viewItem.createdByName }} em {{ viewItem.createdAt ? new Date(viewItem.createdAt).toLocaleString() : '' }}</p>
-            <p v-if="viewItem.finalizedAt" class="text-caption">Finalizado por: {{ viewItem.finalizedByName }} em {{ viewItem.finalizedAt ? new Date(viewItem.finalizedAt).toLocaleString() : '' }}</p>
-          </div>
-        </v-card-text>
-        <v-card-actions>
-          <v-btn variant="text" color="senai-red" @click="viewAberto = false">Fechar</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <v-snackbar v-model="snack.open" :timeout="2200" color="primary" location="bottom">
-      {{ snack.msg }}
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" timeout="3000">
+      {{ snackbar.text }}
+      <template v-slot:actions>
+        <v-btn variant="text" @click="snackbar.show = false">Fechar</v-btn>
+      </template>
     </v-snackbar>
   </v-container>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import * as encaminhamentosService from '@/services/encaminhamentos.services'
-import { formatData } from '@/utils/exportUtils'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
+import * as referralService from '@/services/encaminhamentos.services'
+import { getSocket } from "@/services/socket.services"
+import ReferralCard from './ReferralCard.vue'
+import ReferralDetailsDialog from './ReferralDetailsDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
+const tab = ref('aberto')
+const search = ref('')
+const loading = ref(false)
+const saving = ref(false)
+const commenting = ref(false)
 
-const courseTypes = ['FIC', 'CAI', 'Técnico']
-
-const tab = ref('abertos')
-const selectedCourseType = ref('Todos')
-const termoBusca = ref('')
-const tabLabel = computed(() => (tab.value === 'abertos' ? 'Abertos' : 'Finalizados'))
+const items = ref([])
+const user = ref({})
+const socket = getSocket()
 
 const formRef = ref(null)
 const formValid = ref(false)
-const saving = ref(false)
-const loading = ref(false)
+const form = ref({
+  student_name: '',
+  course_name: '',
+  class_name: '',
+  reason: '',
+  description: ''
+})
 
-const form = ref({ aluno: '', courseType: '', cursoNome: '', turma: '', motivo: '', descricao: '' })
+const detailsDialog = ref(false)
+const selectedItem = ref(null)
 
-const snack = ref({ open: false, msg: '' })
+const finalizeDialog = ref(false)
+const itemToFinalize = ref(null)
+const finalizeFeedback = ref('')
 
-const user = ref({})
+const snackbar = ref({
+  show: false,
+  text: '',
+  color: 'success'
+})
+
 const loadUser = () => {
   try {
     const userData = localStorage.getItem('user')
@@ -327,177 +272,208 @@ const loadUser = () => {
   }
 }
 
-const items = ref([])
-const counts = ref({ total: 0, byType: {} })
+const isAdmin = computed(() => user.value.role?.toLowerCase() === 'admin')
+const isSecretaria = computed(() => user.value.role?.toLowerCase() === 'secretaria')
 
-const filteredItems = computed(() => {
-  if (!termoBusca.value.trim()) return items.value
-  const termo = termoBusca.value.toLowerCase().trim()
-  return items.value.filter(e => {
-    return (e.aluno || '').toLowerCase().includes(termo) ||
-           (e.cursoNome || '').toLowerCase().includes(termo) ||
-           (e.turma || '').toLowerCase().includes(termo) ||
-           (e.motivo || '').toLowerCase().includes(termo) ||
-           (e.descricao || '').toLowerCase().includes(termo) ||
-           (e.user_name || e.createdByName || '').toLowerCase().includes(termo) ||
-           formatData(e.date || e.createdAt).toLowerCase().includes(termo)
-  })
+const currentTabTitle = computed(() => {
+  if (tab.value === 'aberto') return 'Encaminhamentos em Aberto'
+  if (tab.value === 'em andamento') return 'Em Atendimento / Andamento'
+  return 'Encaminhamentos Finalizados'
 })
 
-const isSecretaria = computed(() => (String(user.value?.role || '').toLowerCase() === 'secretaria'))
+const currentTabIcon = computed(() => {
+  if (tab.value === 'aberto') return 'mdi-folder-open'
+  if (tab.value === 'em andamento') return 'mdi-progress-check'
+  return 'mdi-check-circle'
+})
 
 const carregar = async () => {
   loading.value = true
   try {
-    const status = tab.value === 'abertos' ? 'aberto' : 'finalizado'
-    const type = selectedCourseType.value === 'Todos' ? undefined : selectedCourseType.value
+    const data = await referralService.getEncaminhamentos()
+    items.value = Array.isArray(data) ? data : []
 
-    const data = await encaminhamentosService.getEncaminhamentos(status, type)
-    // Handle both {items, counts} and direct array responses
-    items.value = Array.isArray(data) ? data : (data.items || [])
-
-    if (Array.isArray(data)) {
-      // Calculate simple counts from array
-      const byType = {}
-      data.forEach(item => {
-        const t = item.courseType || 'Outros'
-        byType[t] = (byType[t] || 0) + 1
-      })
-      counts.value = { total: data.length, byType }
-    } else {
-      counts.value = data.counts || { total: 0, byType: {} }
+    // Atualiza o item selecionado se o diálogo estiver aberto
+    if (detailsDialog.value && selectedItem.value) {
+      const updated = items.value.find(i => i.id === selectedItem.value.id)
+      if (updated) selectedItem.value = updated
     }
 
-  } catch (e) {
-    console.error('Falha ao carregar encaminhamentos:', e)
-    snack.value = { open: true, msg: 'Falha ao carregar encaminhamentos.' }
-    items.value = []
+    // Se houver um ID na query, abrir o diálogo
+    checkReferralFromQuery()
+  } catch (error) {
+    console.error(error)
+    showSnack('Erro ao carregar dados', 'error')
   } finally {
     loading.value = false
   }
 }
 
-const changeTab = (v) => {
-  tab.value = v
-  carregar()
+const checkReferralFromQuery = () => {
+  const referralId = route.query.id
+  if (referralId && items.value.length > 0) {
+    const found = items.value.find(i => i.id === referralId)
+    if (found) {
+      tab.value = found.status
+      abrirDetalhes(found)
+
+      // Limpar o ID da query para não re-abrir ao trocar de aba ou atualizar
+      router.replace({ query: { ...route.query, id: undefined } })
+    }
+  }
 }
 
-// View dialog state
-const viewAberto = ref(false)
-const viewItem = ref(null)
-const abrirDetalhes = (e) => { viewItem.value = e; viewAberto.value = true }
+const filteredItems = computed(() => {
+  let result = items.value.filter(item => item.status === tab.value)
 
-const editAberto = ref(false)
-const editForm = ref({})
-const deleteConfirm = ref(false)
-const toDelete = ref(null)
-const finalizeDialog = ref(false)
-const finalizeResponse = ref('')
-const finalizeTarget = ref(null)
+  if (search.value) {
+    const s = search.value.toLowerCase()
+    result = result.filter(item =>
+      item.student_name.toLowerCase().includes(s) ||
+      item.reason.toLowerCase().includes(s) ||
+      item.description.toLowerCase().includes(s) ||
+      item.created_by_name.toLowerCase().includes(s)
+    )
+  }
+
+  return result
+})
+
+const countAbertos = computed(() => items.value.filter(i => i.status === 'aberto').length)
+const countMeusAndamento = computed(() => items.value.filter(i => i.status === 'em andamento' && i.assigned_to_id === user.value.id).length)
+
+const showSnack = (text, color = 'success') => {
+  snackbar.value = { show: true, text, color }
+}
 
 const criarEncaminhamento = async () => {
   if (!formValid.value) return
   saving.value = true
   try {
-    const payload = {
+    await referralService.createEncaminhamento({
       ...form.value,
-      user_id: user.value?.id,
-      user_name: user.value?.name,
-      date: new Date().toISOString()
+      created_by_name: user.value.name
+    })
+    form.value = {
+      student_name: '',
+      course_name: '',
+      class_name: '',
+      reason: '',
+      description: ''
     }
-    await encaminhamentosService.createEncaminhamento(payload)
-    form.value = { aluno: '', courseType: '', cursoNome: '', turma: '', motivo: '', descricao: '' }
-    if (formRef.value?.resetValidation) formRef.value.resetValidation()
-    snack.value = { open: true, msg: 'Encaminhamento criado.' }
+    if (formRef.value) formRef.value.resetValidation()
+    showSnack('Encaminhamento enviado com sucesso!')
     await carregar()
-  } catch (e) {
-    console.error('Erro ao criar encaminhamento:', e)
-    snack.value = { open: true, msg: 'Falha ao criar encaminhamento.' }
+  } catch (error) {
+    showSnack('Erro ao enviar encaminhamento', 'error')
   } finally {
     saving.value = false
   }
 }
 
-const abrirEdicao = (e) => {
-  editForm.value = { ...e }
-  editAberto.value = true
-}
-
-const salvarEdicao = async () => {
-  if (!editForm.value || !editForm.value.id) return
+const atenderEncaminhamento = async (item) => {
+  saving.value = true
   try {
-    saving.value = true
-    await encaminhamentosService.updateEncaminhamento(editForm.value.id, editForm.value)
-    editAberto.value = false
-    snack.value = { open: true, msg: 'Encaminhamento atualizado.' }
+    await referralService.updateEncaminhamento(item.id, {
+      ...item,
+      status: 'em andamento',
+      assigned_to_id: user.value.id,
+      assigned_to_name: user.value.name
+    })
+    showSnack('Atendimento iniciado!')
+    tab.value = 'em andamento'
     await carregar()
-  } catch (err) {
-    console.error('Falha ao atualizar:', err)
-    snack.value = { open: true, msg: 'Falha ao atualizar.' }
-  } finally { saving.value = false }
-}
-
-const confirmDelete = (e) => { toDelete.value = e; deleteConfirm.value = true }
-
-const executarDelete = async () => {
-  if (!toDelete.value) return
-  try {
-    await encaminhamentosService.deleteEncaminhamento(toDelete.value.id)
-    snack.value = { open: true, msg: 'Encaminhamento removido.' }
-    deleteConfirm.value = false
-    toDelete.value = null
-    await carregar()
-  } catch (err) {
-    console.error('Falha ao excluir:', err)
-    snack.value = { open: true, msg: 'Falha ao excluir.' }
+  } catch (error) {
+    showSnack('Erro ao iniciar atendimento', 'error')
+  } finally {
+    saving.value = false
   }
 }
 
-const abrirFinalizar = (e) => { 
-  finalizeTarget.value = e
-  finalizeResponse.value = e.response || ''
-  finalizeDialog.value = true 
+const abrirFinalizar = (item) => {
+  itemToFinalize.value = item
+  finalizeFeedback.value = ''
+  finalizeDialog.value = true
 }
 
-const canEdit = (e) => {
-  const role = (user.value?.role || '').toLowerCase()
-  if (!e) return false
-  if (role === 'admin') return true
-  // Supondo que o backend retorna o criador ou que podemos comparar com o user logado
-  return String(user.value?.nif || '') === String(e.createdByNif || e.createdByReg || '')
-}
-
-const executarFinalizar = async () => {
-  if (!finalizeTarget.value) return
-  if (isSecretaria.value && (!finalizeResponse.value || !finalizeResponse.value.trim())) {
-    snack.value = { open: true, msg: 'Preencha a resposta antes de finalizar.' }
-    return
-  }
+const confirmarFinalizacao = async () => {
+  if (!itemToFinalize.value) return
+  saving.value = true
   try {
-    await encaminhamentosService.finalize(finalizeTarget.value.id, finalizeResponse.value)
+    await referralService.finalize(itemToFinalize.value.id, finalizeFeedback.value)
     finalizeDialog.value = false
-    snack.value = { open: true, msg: 'Encaminhamento finalizado.' }
+    detailsDialog.value = false
+    showSnack('Encaminhamento finalizado!')
+    tab.value = 'finalizado'
     await carregar()
-  } catch (err) {
-    console.error('Falha ao finalizar:', err)
-    snack.value = { open: true, msg: 'Falha ao finalizar.' }
+  } catch (error) {
+    showSnack('Erro ao finalizar', 'error')
+  } finally {
+    saving.value = false
   }
 }
 
-const finalizar = async (e) => {
+const abrirDetalhes = (item) => {
+  selectedItem.value = item
+  detailsDialog.value = true
+}
+
+const enviarComentario = async (text) => {
+  if (!text.trim() || !selectedItem.value) return
+  commenting.value = true
   try {
-    await encaminhamentosService.finalize(e.id)
-    snack.value = { open: true, msg: 'Encaminhamento finalizado.' }
+    await referralService.addComment({
+      referral_id: selectedItem.value.id,
+      comment: text
+    })
     await carregar()
-  } catch (err) {
-    snack.value = { open: true, msg: 'Falha ao finalizar encaminhamento.' }
+  } catch (error) {
+    showSnack('Erro ao enviar comentário', 'error')
+  } finally {
+    commenting.value = false
   }
+}
+
+const handleSocketUpdate = () => {
+  console.log("🔄 Referral change detected via socket")
+  carregar()
 }
 
 onMounted(() => {
   loadUser()
   carregar()
+
+  if (socket) {
+    socket.on('referral:changed', handleSocketUpdate)
+  }
 })
 
-watch(selectedCourseType, () => carregar())
+onUnmounted(() => {
+  if (socket) {
+    socket.off('referral:changed', handleSocketUpdate)
+  }
+})
+
+watch(tab, () => carregar())
+
+watch(() => route.query.id, () => {
+  checkReferralFromQuery()
+})
 </script>
+
+<style scoped>
+.sticky-card {
+  position: sticky;
+  top: 20px;
+}
+
+.bg-senai-red {
+  background-color: #ED1C24 !important;
+}
+
+.text-senai-red {
+  color: #ED1C24 !important;
+}
+
+.ga-2 { gap: 8px; }
+</style>
