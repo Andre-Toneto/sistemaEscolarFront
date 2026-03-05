@@ -67,6 +67,7 @@ const isAdmin = computed(() => authStore.isAdmin)
 
 const navItems = [
   { text: 'Início', route: 'home', icon: 'mdi-home' },
+  { text: 'Calendário', route: 'calendario-escolar', icon: 'mdi-calendar-clock' },
   { text: 'Carômetro', route: 'carometro', icon: 'mdi-account-group', excludeFic: true },
   { text: 'Mapa de Sala', route: 'mapa-sala', icon: 'mdi-door-open' },
   { text: 'Encaminhamentos', route: 'encaminhamentos/abertos', icon: 'mdi-send' },

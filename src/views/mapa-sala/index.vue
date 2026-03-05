@@ -211,16 +211,16 @@
               variant="outlined"
               density="comfortable"
               prepend-inner-icon="mdi-account"
-              class="mb-2"
+              class=""
             />
 
             <!-- Tab Content for Bulk Mode -->
             <v-window v-if="bulkMode && !isEdicao" v-model="activeTab">
               <!-- TAB 0: RESERVAR -->
               <v-window-item :value="0">
-                <v-row dense>
+                <v-row dense class="mt-1">
                   <v-col cols="6">
-                    <v-text-field v-model="reservaForm.dia" type="date" label="Data Início" variant="outlined" density="comfortable" />
+                    <v-text-field v-model="reservaForm.dia"  type="date" label="Data Início" variant="outlined" density="comfortable" />
                   </v-col>
                   <v-col cols="6">
                     <v-text-field v-model="reservaForm.dia_fim" type="date" label="Data Fim" variant="outlined" density="comfortable" />
@@ -255,27 +255,47 @@
                   </div>
                 </div>
 
-                <v-text-field
-                  v-model="reservaForm.course_name"
+                <v-autocomplete
+                  v-model="reservaForm.course_id"
+                  :items="carometroStore.courses"
+                  item-title="name"
+                  item-value="id"
                   label="Curso / Evento"
                   variant="outlined"
-                  placeholder="Digite o nome do curso"
+                  density="comfortable"
                   prepend-inner-icon="mdi-book-education"
+                  class="mb-2"
                 />
+                <v-text-field
+                  v-model="reservaForm.course_name"
+                  label="Aula"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-pencil"
+                  class="mb-2"
+                />
+                <v-autocomplete
+                  v-model="reservaForm.class_id"
+                  :items="filteredClasses"
+                  item-title="class_name"
+                  item-value="id"
+                  label="Turma"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-account-group"
+                  :disabled="!reservaForm.course_id"
+                  class="mb-2"
+                >
+                  <template v-slot:append v-if="canQuickCreateTurma">
+                    <v-btn icon="mdi-plus-circle-outline" variant="text" size="small" color="primary" @click.stop="openQuickTurma(reservaForm.course_id)" title="Criar Nova Turma" />
+                  </template>
+                </v-autocomplete>
                 <v-row dense>
-                  <v-col cols="6">
-                    <v-select
-                      v-model="reservaForm.course_type"
-                      :items="['CAI', 'FIC', 'Técnico', 'Outro']"
-                      label="Tipo"
-                      variant="outlined"
-                    />
-                  </v-col>
-                  <v-col cols="6">
+                  <v-col cols="12">
                     <v-text-field
                       v-model.number="reservaForm.number_students"
                       type="number"
-                      label="Alunos"
+                      label="Quantidade de Alunos"
                       variant="outlined"
                     />
                   </v-col>
@@ -311,7 +331,7 @@
               <!-- TAB 2: TRANSFERIR -->
               <v-window-item :value="2">
                 <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-                  Transfira as reservas do período selecionado para outra sala.
+                  Transfira as reservas do período selecionado para outra sala ou usuário.
                 </v-alert>
                 <v-row dense>
                   <v-col cols="6">
@@ -330,35 +350,82 @@
                   variant="outlined"
                   density="comfortable"
                   prepend-inner-icon="mdi-door-open"
+                  class="mb-2"
+                  clearable
+                />
+                <v-autocomplete
+                  v-model="reservaForm.to_user_id"
+                  :items="usersStore.users"
+                  item-title="name"
+                  item-value="id"
+                  label="Novo Usuário Responsável"
+                  variant="outlined"
+                  density="comfortable"
+                  prepend-inner-icon="mdi-account-switch"
+                  class="mb-2"
+                  clearable
+                />
+                <v-select
+                  v-model="reservaForm.selected_periods"
+                  :items="store.PERIODOS"
+                  item-title="label"
+                  item-value="id"
+                  label="Filtrar por Períodos"
+                  multiple
+                  chips
+                  variant="outlined"
+                  density="comfortable"
+                  class="mb-2"
                 />
               </v-window-item>
             </v-window>
 
             <!-- Single Mode Fields (Current Layout) -->
             <template v-else>
-              <v-text-field
-                v-model="reservaForm.course_name"
+              <v-autocomplete
+                v-model="reservaForm.course_id"
+                :items="carometroStore.courses"
+                item-title="name"
+                item-value="id"
                 label="Curso / Evento"
                 variant="outlined"
-                placeholder="Digite o nome do curso"
-                :readonly="isEdicao && !podeEditar"
+                density="comfortable"
                 prepend-inner-icon="mdi-book-education"
+                class="mb-2"
+                :readonly="isEdicao && !podeEditar"
               />
+              <v-text-field
+                v-model="reservaForm.course_name"
+                label="Aula"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-pencil"
+                class="mb-2"
+                :readonly="isEdicao && !podeEditar"
+              />
+              <v-autocomplete
+                v-model="reservaForm.class_id"
+                :items="filteredClasses"
+                item-title="class_name"
+                item-value="id"
+                label="Turma"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-account-group"
+                :disabled="!reservaForm.course_id"
+                class="mb-2"
+                :readonly="isEdicao && !podeEditar"
+              >
+                <template v-slot:append v-if="canQuickCreateTurma">
+                  <v-btn icon="mdi-plus-circle-outline" variant="text" size="small" color="primary" @click.stop="openQuickTurma(reservaForm.course_id)" title="Criar Nova Turma" />
+                </template>
+              </v-autocomplete>
               <v-row dense>
-                <v-col cols="6">
-                  <v-select
-                    v-model="reservaForm.course_type"
-                    :items="['CAI', 'FIC', 'Técnico', 'Outro']"
-                    label="Tipo"
-                    variant="outlined"
-                    :readonly="isEdicao && !podeEditar"
-                  />
-                </v-col>
-                <v-col cols="6">
+                <v-col cols="12">
                   <v-text-field
                     v-model.number="reservaForm.number_students"
                     type="number"
-                    label="Alunos"
+                    label="Quantidade de Alunos"
                     variant="outlined"
                     :readonly="isEdicao && !podeEditar"
                   />
@@ -373,16 +440,33 @@
               <!-- Single Transfer Section -->
               <v-expand-transition>
                 <div v-if="isEdicao && podeEditar && transferMode" class="mt-4 pa-4 bg-blue-lighten-5 rounded-lg border">
-                  <div class="text-subtitle-2 mb-2">Transferir para outra sala:</div>
-                  <v-select
-                    v-model="reservaForm.target_classroom_id"
-                    :items="store.classrooms"
-                    item-title="name"
-                    item-value="id"
-                    label="Nova Sala"
-                    variant="outlined"
-                    density="comfortable"
-                  />
+                  <div class="text-subtitle-2 mb-2">Transferir para:</div>
+                  <v-row dense>
+                    <v-col cols="12" md="6">
+                      <v-select
+                        v-model="reservaForm.target_classroom_id"
+                        :items="store.classrooms"
+                        item-title="name"
+                        item-value="id"
+                        label="Nova Sala"
+                        variant="outlined"
+                        density="comfortable"
+                        clearable
+                      />
+                    </v-col>
+                    <v-col cols="12" md="6">
+                      <v-autocomplete
+                        v-model="reservaForm.to_user_id"
+                        :items="usersStore.users"
+                        item-title="name"
+                        item-value="id"
+                        label="Novo Usuário"
+                        variant="outlined"
+                        density="comfortable"
+                        clearable
+                      />
+                    </v-col>
+                  </v-row>
                   <div class="d-flex flex-wrap ga-2">
                     <v-btn color="primary" variant="tonal" size="small" @click="transferirReserva('single')">Esta reserva</v-btn>
                     <v-btn color="primary" variant="elevated" size="small" @click="transferirReserva('all')">Todas futuras</v-btn>
@@ -406,7 +490,7 @@
               <v-btn v-if="activeTab === 1" color="error" variant="elevated" @click="removerReserva" :disabled="!reservaForm.classroom_id" :loading="loading">
                 Remover do Período
               </v-btn>
-              <v-btn v-if="activeTab === 2" color="info" variant="elevated" @click="transferirReserva('period')" :disabled="!reservaForm.classroom_id || !reservaForm.target_classroom_id" :loading="loading">
+              <v-btn v-if="activeTab === 2" color="info" variant="elevated" @click="transferirReserva('period')" :disabled="!reservaForm.classroom_id || (!reservaForm.target_classroom_id && !reservaForm.to_user_id)" :loading="loading">
                 Transferir Período
               </v-btn>
             </template>
@@ -486,6 +570,40 @@
 
     <v-snackbar v-model="snack.show" :color="snack.color">{{ snack.text }}</v-snackbar>
 
+    <!-- Quick Turma Dialog -->
+    <v-dialog v-model="quickTurma.show" max-width="350">
+      <v-card rounded="xl">
+        <v-card-title class="pa-4">Nova Turma</v-card-title>
+        <v-card-text class="pa-4 pt-0">
+          <v-text-field
+            v-model="quickTurma.name"
+            label="Nome da Turma"
+            variant="outlined"
+            density="comfortable"
+            class="mb-3"
+            hide-details
+            @keyup.enter="saveQuickTurma"
+            placeholder="Ex: 2024-1A"
+          />
+          <v-text-field
+            v-model.number="quickTurma.number_students"
+            label="Quantidade de Alunos"
+            type="number"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+          />
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="quickTurma.show = false">Cancelar</v-btn>
+          <v-btn color="primary" variant="elevated" @click="saveQuickTurma" :loading="quickTurma.loading" :disabled="!quickTurma.name.trim()">
+            Criar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Confirmation Dialog -->
     <v-dialog v-model="confirmDialog.show" max-width="400">
       <v-card rounded="xl">
@@ -510,6 +628,7 @@ import { useMapaSalaStore } from '@/store/mapaSala'
 import { useAuthStore } from '@/store/auth'
 import { useCarometroStore } from '@/store/carometro'
 import { useUsersStore } from '@/store/users'
+import * as carometroService from '@/services/carometro.services'
 import { toDateOnly, weekDaysMonSat, monthMatrix, startOfWeekMonday } from '@/utils/dateUtils'
 import { stringToColor } from '@/utils/colorUtils'
 
@@ -520,6 +639,39 @@ const usersStore = useUsersStore()
 
 const isAdmin = computed(() => authStore.isAdmin)
 const isSecretariaAdmin = computed(() => authStore.isSecretariaAdmin)
+
+const reservaForm = ref({
+  id: null,
+  dia: '',
+  dia_fim: '',
+  classroom_id: '',
+  target_classroom_id: null,
+  to_user_id: null,
+  period: '',
+  selected_periods: [],
+  course_name: '',
+  course_type: 'Técnico',
+  number_students: 0,
+  user_id: null,
+  user_name: '',
+  diaFormatted: '',
+  salaName: '',
+  periodoLabel: '',
+  weekdays: [1, 2, 3, 4, 5] // Mon-Fri by default
+})
+
+const podeEditar = computed(() => {
+  if (!authStore.user) return false
+  if (isAdmin.value) return true
+  const res = store.getReservation(reservaForm.value.dia, reservaForm.value.classroom_id, reservaForm.value.period)
+  return res && res.user_id === authStore.user.id
+})
+
+const filteredClasses = computed(() => {
+  if (!reservaForm.value.course_id) return []
+  return carometroStore.getClassesByCourseId(reservaForm.value.course_id)
+})
+
 const modo = ref('semana')
 const baseDate = ref(new Date())
 const salaFiltro = ref('')
@@ -531,6 +683,70 @@ const showSnack = (text, color = 'success') => {
   snack.color = color
   snack.show = true
 }
+
+const isEdicao = ref(false)
+const bulkMode = ref(false)
+const bulkGeneral = ref(false)
+const transferMode = ref(false)
+const activeTab = ref(0)
+
+const quickTurma = reactive({
+  show: false,
+  loading: false,
+  name: '',
+  number_students: 0,
+  courseId: null
+})
+
+const canQuickCreateTurma = computed(() => {
+  const courseId = reservaForm.value.course_id
+  if (!courseId) return false
+  const courses = carometroStore.courses || []
+  const course = courses.find(c => String(c.id) === String(courseId))
+  if (!course) return false
+  // Check if course name contains "FIC" (case-insensitive)
+  return course.name?.toUpperCase().includes('FIC')
+})
+
+const openQuickTurma = (courseId) => {
+  quickTurma.courseId = courseId
+  quickTurma.name = ''
+  quickTurma.number_students = reservaForm.value.number_students || 0
+  quickTurma.show = true
+}
+
+const saveQuickTurma = async () => {
+  if (!quickTurma.name.trim() || !quickTurma.courseId) return
+  quickTurma.loading = true
+  try {
+    const newClass = await carometroService.createClass({
+      class_name: quickTurma.name.trim(),
+      course_id: quickTurma.courseId,
+      number_students: quickTurma.number_students
+    })
+    await carometroStore.fetchClasses()
+    reservaForm.value.class_id = newClass.id
+    reservaForm.value.number_students = quickTurma.number_students
+    quickTurma.show = false
+    showSnack('Turma criada com sucesso!')
+  } catch (err) {
+    showSnack('Erro ao criar turma: ' + err.message, 'error')
+  } finally {
+    quickTurma.loading = false
+  }
+}
+
+watch(() => reservaForm.value.course_id, (newId) => {
+  if (newId) {
+    // Only reset class if the current class doesn't belong to the new course
+    if (reservaForm.value.class_id) {
+      const cls = carometroStore.classes.find(c => c.id === reservaForm.value.class_id)
+      if (cls && cls.course_id !== newId) {
+        reservaForm.value.class_id = null
+      }
+    }
+  }
+})
 
 // Data Navigation
 const diasSemana = computed(() => weekDaysMonSat(baseDate.value))
@@ -614,11 +830,6 @@ const getResumoDia = (d) => {
 
 // Dialogs
 const dialogReserva = ref(false)
-const isEdicao = ref(false)
-const bulkMode = ref(false)
-const bulkGeneral = ref(false)
-const transferMode = ref(false)
-const activeTab = ref(0)
 
 const confirmDialog = reactive({
   show: false,
@@ -641,32 +852,6 @@ const abrirConfirmacao = (title, message, action, color = 'primary', icon = 'mdi
   confirmDialog.show = true
 }
 
-const reservaForm = ref({
-  id: null,
-  dia: '',
-  dia_fim: '',
-  classroom_id: '',
-  target_classroom_id: null,
-  period: '',
-  selected_periods: [],
-  course_name: '',
-  course_type: 'Técnico',
-  number_students: 0,
-  user_id: null,
-  user_name: '',
-  diaFormatted: '',
-  salaName: '',
-  periodoLabel: '',
-  weekdays: [1, 2, 3, 4, 5] // Mon-Fri by default
-})
-
-const podeEditar = computed(() => {
-  if (!authStore.user) return false
-  if (isAdmin.value) return true
-  const res = store.getReservation(reservaForm.value.dia, reservaForm.value.classroom_id, reservaForm.value.period)
-  return res && res.user_id === authStore.user.id
-})
-
 const abrirBulkGeral = () => {
   isEdicao.value = false
   bulkMode.value = true
@@ -682,9 +867,12 @@ const abrirBulkGeral = () => {
     dia_fim: today,
     classroom_id: '',
     target_classroom_id: null,
+    to_user_id: null,
     period: 'MANHA',
     selected_periods: ['MANHA'],
     course_name: '',
+    course_id: null,
+    class_id: null,
     course_type: 'Técnico',
     number_students: 0,
     user_id: authStore.user?.id,
@@ -714,9 +902,12 @@ const abrirReservaDialog = (dia, sala, periodoId) => {
     dia_fim: dia,
     classroom_id: sala.id,
     target_classroom_id: null,
+    to_user_id: null,
     period: periodoId,
     selected_periods: [periodoId],
     course_name: r?.course_name || '',
+    course_id: r?.course_id || null,
+    class_id: r?.class_id || null,
     course_type: r?.course_type || 'Técnico',
     number_students: r?.number_students || 0,
     user_id: r?.user_id || authStore.user?.id,
@@ -734,6 +925,8 @@ const salvarReserva = async () => {
   loading.value = true
   try {
     const selectedUser = usersStore.users.find(u => u.id === reservaForm.value.user_id) || authStore.user
+    const courseObj = carometroStore.courses.find(c => c.id === reservaForm.value.course_id)
+    const selectedCourseName = courseObj ? courseObj.name : 'Outro'
 
     if (bulkMode.value) {
       const payload = {
@@ -745,7 +938,9 @@ const salvarReserva = async () => {
         user_id: selectedUser.id,
         user_name: selectedUser.name,
         course_name: reservaForm.value.course_name,
-        course_type: reservaForm.value.course_type,
+        course_id: reservaForm.value.course_id,
+        class_id: reservaForm.value.class_id,
+        course_type: selectedCourseName,
         number_students: Number(reservaForm.value.number_students)
       }
       await store.createBulkReservations(payload)
@@ -758,7 +953,9 @@ const salvarReserva = async () => {
         user_id: selectedUser.id,
         user_name: selectedUser.name,
         course_name: reservaForm.value.course_name,
-        course_type: reservaForm.value.course_type,
+        course_id: reservaForm.value.course_id,
+        class_id: reservaForm.value.class_id,
+        course_type: selectedCourseName,
         number_students: Number(reservaForm.value.number_students)
       }
 
@@ -811,8 +1008,8 @@ const removerReserva = async () => {
 }
 
 const transferirReserva = async (mode = 'single') => {
-  if (!reservaForm.value.target_classroom_id) {
-    showSnack('Selecione a sala de destino', 'warning')
+  if (!reservaForm.value.target_classroom_id && !reservaForm.value.to_user_id) {
+    showSnack('Selecione a sala ou o usuário de destino', 'warning')
     return
   }
 
@@ -822,11 +1019,13 @@ const transferirReserva = async (mode = 'single') => {
       from_classroom_id: reservaForm.value.classroom_id,
       to_classroom_id: reservaForm.value.target_classroom_id,
       user_id: reservaForm.value.user_id,
+      to_user_id: reservaForm.value.to_user_id,
       reservation_id: reservaForm.value.id,
       all: mode === 'all',
       by_period: mode === 'period',
       start_date: mode === 'period' ? reservaForm.value.dia : undefined,
-      end_date: mode === 'period' ? reservaForm.value.dia_fim : undefined
+      end_date: mode === 'period' ? reservaForm.value.dia_fim : undefined,
+      periods: (mode === 'all' || mode === 'period') ? reservaForm.value.selected_periods : undefined
     }
     await store.transferReservations(payload)
 
@@ -907,14 +1106,14 @@ const abrirDia = (d) => {
 
 // Export
 const exportarCSV = () => {
-  const headers = ['Data', 'Sala', 'Período', 'Responsável', 'Curso', 'Tipo', 'Alunos']
+  const headers = ['Data', 'Sala', 'Período', 'Responsável', 'Curso', 'Aula', 'Alunos']
   const rows = store.reservations.map(r => [
     new Date(r.data).toLocaleDateString('pt-BR'),
     r.classrooms?.name || 'N/A',
     r.period,
     r.user_name,
+    r.course_type || '',
     r.course_name || '',
-    r.course_type,
     r.number_students
   ])
 
@@ -934,7 +1133,7 @@ const exportarCSV = () => {
 
 onMounted(() => {
   store.fetchData()
-  carometroStore.fetchCourses()
+  carometroStore.fetchData()
   if (isAdmin.value) usersStore.fetchUsers()
 })
 </script>

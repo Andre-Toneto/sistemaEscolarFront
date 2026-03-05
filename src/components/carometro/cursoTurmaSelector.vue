@@ -212,7 +212,9 @@ const carregandoCursos = ref(false)
 const carregarCursos = async () => {
   carregandoCursos.value = true
   try {
-    cursosDisponiveis.value = await carometroService.getCourses()
+    const allCourses = await carometroService.getCourses()
+    // Filtrar apenas cursos que devem ser exibidos no carômetro
+    cursosDisponiveis.value = allCourses.filter(c => Number(c.show_carometer) === 1)
   } catch (error) {
     console.error('Erro ao carregar cursos:', error)
   } finally {
@@ -224,7 +226,8 @@ const selecionarCurso = async (curso) => {
   cursoSelecionado.value = curso
   turmaSelecionada.value = null
   try {
-    turmasDisponiveis.value = await carometroService.getClasses(curso.id)
+    const allClasses = await carometroService.getClasses(curso.id)
+    turmasDisponiveis.value = allClasses.filter(c => !c.archived)
   } catch (err) {
     console.error('Erro ao carregar turmas:', err)
   }

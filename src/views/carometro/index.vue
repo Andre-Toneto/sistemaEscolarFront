@@ -15,7 +15,7 @@
         </v-btn>
         <v-toolbar-title>{{ turmaNome }} - {{ cursoNome }}</v-toolbar-title>
         <v-spacer />
-        <v-btn v-if="isAdmin" color="white" variant="elevated" class="text-primary" @click="abrirNovoAluno">
+        <v-btn v-if="canAddStudent" color="white" variant="elevated" class="text-primary" @click="abrirNovoAluno">
           Novo Aluno
         </v-btn>
       </v-toolbar>
@@ -112,14 +112,22 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useCarometroStore } from '@/store/carometro'
 import * as carometroService from '@/services/carometro.services'
 import cursoTurmaSelector from '@/components/carometro/cursoTurmaSelector.vue'
 import carometroGrid from '@/components/carometro/index.vue'
 import pessoaModal from '@/components/carometro/pessoaModal.vue'
 
+const carometroStore = useCarometroStore()
 const route = useRoute()
 const user = ref({})
 const isAdmin = computed(() => (user.value?.role || '').toLowerCase() === 'admin' || (user.value?.role || '').toLowerCase() === 'adm')
+
+const canAddStudent = computed(() => {
+  if (isAdmin.value) return true
+  const course = carometroStore.courses.find(c => c.id === cursoId.value)
+  return course?.type === 'FIC'
+})
 
 const loadingSalvar = ref(false)
 const selecaoFeita = ref(false)

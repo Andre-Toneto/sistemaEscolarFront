@@ -147,16 +147,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCarometroStore } from '@/store/carometro'
+import { useAuthStore } from '@/store/auth'
 import * as carometroService from '@/services/carometro.services'
 
 const store = useCarometroStore()
+const authStore = useAuthStore()
 const students = ref([])
 const filterClass = ref(null)
 const modal = ref(false)
 const editing = ref(null)
 const loading = ref(false)
+
+const isAdmin = computed(() => authStore.isAdmin)
 
 const form = ref({
   course_id: '',

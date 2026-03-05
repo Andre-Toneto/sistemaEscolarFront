@@ -49,6 +49,11 @@ const routes = [
     path: "/admin",
     component: () => import("@/views/admin/index.vue"),
     meta: { requiresAuth: true, adminOnly: true }
+  },
+  {
+    path: "/calendario-escolar",
+    component: () => import("@/views/calendario-escolar/index.vue"),
+    meta: { requiresAuth: false }
   }
 ]
 

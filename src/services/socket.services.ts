@@ -3,7 +3,10 @@ import { io, Socket } from "socket.io-client"
 let socket: Socket | null = null
 
 export function initSocket(token: string): Socket {
-  socket = io("http://localhost:3000", {
+  const { hostname, protocol } = window.location
+  const socketUrl = `${protocol}//${hostname}:3000`
+
+  socket = io(socketUrl, {
     auth: { token }
   })
 
