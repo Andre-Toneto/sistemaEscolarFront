@@ -20,6 +20,9 @@
             <v-chip size="small" :color="getRoleColor(user.role)">
               {{ user.role }}
             </v-chip>
+            <div v-if="user.sub_role" class="text-caption text-grey mt-1">
+              {{ formatSubRole(user.sub_role) }}
+            </div>
           </td>
           <td>
             <v-btn icon color="blue" variant="text" size="small" @click="$emit('edit', user)" title="Editar">
@@ -50,5 +53,15 @@ const getRoleColor = (role) => {
     'secretaria': 'warning'
   }
   return m[role?.toLowerCase()] || 'grey'
+}
+
+const formatSubRole = (subRole) => {
+  const m = {
+    'admin_geral': 'Geral',
+    'admin_secretaria': 'Secretaria',
+    'admin_pedagogico': 'Pedagógico',
+    'admin_fic': 'FIC'
+  }
+  return m[subRole] || subRole
 }
 </script>

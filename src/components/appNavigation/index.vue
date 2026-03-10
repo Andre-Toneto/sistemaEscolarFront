@@ -66,7 +66,8 @@ const pendingTotal = ref(0)
 const isAdmin = computed(() => authStore.isAdmin)
 
 const navItems = [
-  { text: 'Início', route: 'home', icon: 'mdi-home' },
+  { text: 'Início', route: 'home', icon: 'mdi-home', public: true },
+  { text: 'Calendário', route: 'calendario-escolar', icon: 'mdi-calendar-clock', public: true },
   { text: 'Carômetro', route: 'carometro', icon: 'mdi-account-group', excludeFic: true },
   { text: 'Mapa de Sala', route: 'mapa-sala', icon: 'mdi-door-open' },
   { text: 'Encaminhamentos', route: 'encaminhamentos/abertos', icon: 'mdi-send' },
@@ -78,6 +79,7 @@ const navItems = [
 const filteredNavItems = computed(() => {
   const role = (authStore.user?.role || '').toLowerCase()
   return navItems.filter(item => {
+    if (!item.public && !authStore.isAuthenticated) return false
     if (item.adminOnly && !isAdmin.value) return false
     if (item.excludeFic && role === 'fic') return false
     return true

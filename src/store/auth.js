@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { login as loginRequest } from '@/services/auth.services'
+import { login as loginRequest, forgotPassword as forgotPasswordService, changePassword as changePasswordService, getBirthdays as getBirthdaysService } from '@/services/auth.services'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.token,
     isAdmin: (state) => ['admin', 'adm'].includes((state.user?.role || '').toLowerCase()),
+    isSecretariaAdmin: (state) => state.user?.sub_role === 'admin_secretaria',
     userRole: (state) => state.user?.role || 'regular',
   },
   actions: {
@@ -29,6 +30,15 @@ export const useAuthStore = defineStore('auth', {
         this.logout()
         throw error
       }
+    },
+    async forgotPassword(email) {
+      return await forgotPasswordService(email)
+    },
+    async changePassword(data) {
+      return await changePasswordService(data)
+    },
+    async getBirthdays() {
+      return await getBirthdaysService()
     },
     logout() {
       this.token = null

@@ -84,3 +84,8 @@ export async function deleteStudent(id) {
   const response = await carometroApi.deleteStudent(id)
   return response.data
 }
+
+export async function getStudent(id) {
+  const response = await carometroApi.getStudent(id)
+  return response.data
+}

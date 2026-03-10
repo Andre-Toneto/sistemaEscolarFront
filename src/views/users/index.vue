@@ -92,7 +92,8 @@ const editUser = (user) => {
     birthDate: user.birthDate ? String(user.birthDate).split("T")[0] : "",
     password: "",
     passwordConfirm: "",
-    role: user.role || "regular"
+    role: user.role || "regular",
+    sub_role: user.sub_role || null
   }
 }
 

@@ -15,7 +15,7 @@
         </v-btn>
         <v-toolbar-title>{{ turmaNome }} - {{ cursoNome }}</v-toolbar-title>
         <v-spacer />
-        <v-btn v-if="isAdmin" color="white" variant="elevated" class="text-primary" @click="abrirNovoAluno">
+        <v-btn v-if="canAddStudent" color="white" variant="elevated" class="text-primary" @click="abrirNovoAluno">
           Novo Aluno
         </v-btn>
       </v-toolbar>
@@ -110,14 +110,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useCarometroStore } from '@/store/carometro'
 import * as carometroService from '@/services/carometro.services'
 import cursoTurmaSelector from '@/components/carometro/cursoTurmaSelector.vue'
 import carometroGrid from '@/components/carometro/index.vue'
 import pessoaModal from '@/components/carometro/pessoaModal.vue'
 
+const carometroStore = useCarometroStore()
+const route = useRoute()
 const user = ref({})
 const isAdmin = computed(() => (user.value?.role || '').toLowerCase() === 'admin' || (user.value?.role || '').toLowerCase() === 'adm')
+
+const canAddStudent = computed(() => {
+  if (isAdmin.value) return true
+  const course = carometroStore.courses.find(c => c.id === cursoId.value)
+  return course?.type === 'FIC'
+})
 
 const loadingSalvar = ref(false)
 const selecaoFeita = ref(false)
@@ -158,6 +168,42 @@ const loadUser = () => {
     user.value = userData ? JSON.parse(userData) : {}
   } catch {
     user.value = {}
+  }
+}
+
+const checkStudentFromQuery = async () => {
+  const studentId = route.query.studentId
+  if (studentId) {
+    try {
+      const student = await carometroService.getStudent(studentId)
+      if (student) {
+        cursoId.value = student.course_id
+        turmaId.value = student.class_id
+
+        // Buscar nomes se necessário
+        const courses = await carometroService.getCourses()
+        const classes = await carometroService.getClasses()
+
+        const c = courses.find(item => item.id === student.course_id)
+        const t = classes.find(item => item.id === student.class_id)
+
+        if (c && t) {
+          cursoNome.value = c.name
+          turmaNome.value = t.class_name
+          selecaoFeita.value = true
+
+          // Esperar o grid carregar e abrir o aluno
+          setTimeout(() => {
+            verAluno(student)
+          }, 500)
+
+          // Limpar o studentId da query para não re-abrir
+          router.replace({ query: { ...route.query, studentId: undefined } })
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao buscar aluno por ID da query', e)
+    }
   }
 }
 
@@ -267,5 +313,10 @@ const salvarAluno = async () => {
 
 onMounted(() => {
   loadUser()
+  checkStudentFromQuery()
+})
+
+watch(() => route.query.studentId, () => {
+  checkStudentFromQuery()
 })
 </script>

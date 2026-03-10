@@ -23,6 +23,12 @@
         <v-card-title>{{ editing ? 'Editar Curso' : 'Novo Curso' }}</v-card-title>
         <v-card-text>
           <v-text-field v-model="form.name" label="Nome do Curso" variant="outlined" />
+          <v-select
+            v-model="form.show_carometer"
+            :items="[{ title: 'Sim', value: 1 }, { title: 'Não', value: 0 }]"
+            label="Exibir no Carômetro?"
+            variant="outlined"
+          />
           <v-color-picker v-model="form.color" hide-inputs class="mx-auto" />
         </v-card-text>
         <v-card-actions>
@@ -44,16 +50,16 @@ const store = useCarometroStore()
 const modal = ref(false)
 const editing = ref(null)
 const loading = ref(false)
-const form = reactive({ name: '', color: '#C1272C' })
+const form = reactive({ name: '', color: '#C1272C', show_carometer: 1 })
 
 const emit = defineEmits(['updated'])
 
 const openModal = (course = null) => {
   editing.value = course
   if (course) {
-    Object.assign(form, { name: course.name, color: course.color || '#C1272C' })
+    Object.assign(form, { name: course.name, color: course.color || '#C1272C', show_carometer: course.show_carometer ?? 1 })
   } else {
-    Object.assign(form, { name: '', color: '#C1272C' })
+    Object.assign(form, { name: '', color: '#C1272C', show_carometer: 1 })
   }
   modal.value = true
 }

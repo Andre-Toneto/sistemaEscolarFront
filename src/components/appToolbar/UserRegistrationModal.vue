@@ -47,6 +47,17 @@
                 prepend-inner-icon="mdi-account-badge"
               />
             </v-col>
+            <v-col cols="12" md="6" v-if="form.role === 'admin'">
+              <v-select
+                v-model="form.sub_role"
+                :items="subRoles"
+                label="Sub-tipo de Admin"
+                variant="outlined"
+                density="comfortable"
+                prepend-inner-icon="mdi-account-cog"
+                :rules="rules.required"
+              />
+            </v-col>
             <v-col cols="12" md="6">
               <v-text-field
                 v-model="form.password"
@@ -126,7 +137,8 @@ const form = reactive({
   name: '',
   password: '',
   confirmPassword: '',
-  role: 'regular'
+  role: 'regular',
+  sub_role: null
 })
 
 const roles = [
@@ -134,6 +146,13 @@ const roles = [
   { title: 'FIC', value: 'fic' },
   { title: 'Admin', value: 'admin' },
   { title: 'Secretaria', value: 'secretaria' }
+]
+
+const subRoles = [
+  { title: 'Admin Geral', value: 'admin_geral' },
+  { title: 'Admin Secretaria', value: 'admin_secretaria' },
+  { title: 'Admin Pedagógico', value: 'admin_pedagogico' },
+  { title: 'Admin FIC', value: 'admin_fic' }
 ]
 
 const rules = {
@@ -153,6 +172,9 @@ const handleRegister = async () => {
   try {
     const payload = { ...form }
     delete payload.confirmPassword
+    if (payload.role !== 'admin') {
+      payload.sub_role = null
+    }
     await api.post("/users/register", payload)
     isOpen.value = false
     emit('registered')
@@ -171,7 +193,8 @@ const resetForm = () => {
     name: '',
     password: '',
     confirmPassword: '',
-    role: 'regular'
+    role: 'regular',
+    sub_role: null
   })
 }
 </script>

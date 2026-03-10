@@ -1,10 +1,15 @@
 import axios from "axios"
 
-// Usar /api para permitir proxy pelo Vite ou fallback para localhost:3000
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000"
+// Usar /api para permitir proxy pelo Vite ou fallback dinâmico para o host atual na porta 3000
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+
+  // Ao usar proxy no Vite ou Nginx, podemos usar o caminho relativo
+  return "/api"
+}
 
 export const api = axios.create({
-  baseURL
+  baseURL: getBaseURL()
 })
 
 api.interceptors.request.use((config) => {
