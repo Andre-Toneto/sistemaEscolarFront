@@ -107,29 +107,23 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUsersStore } from '@/store/users'
+import { useAuthStore } from '@/store/auth'
 import { exportAniversariantesPDF } from '@/utils/exportUtils'
 import { fromDateOnly } from '@/utils/dateUtils'
 
 const router = useRouter()
-const usersStore = useUsersStore()
+const authStore = useAuthStore()
+
+const birthdays = ref([])
 
 const aniversariantesMes = computed(() => {
-  const hoje = new Date()
-  const mesAtual = hoje.getMonth()
-  return usersStore.users
-    .filter(u => {
-      if (!u.birthDate) return false
-      const birth = fromDateOnly(u.birthDate)
-      return birth && birth.getMonth() === mesAtual
-    })
-    .sort((a, b) => {
-      const dateA = fromDateOnly(a.birthDate)
-      const dateB = fromDateOnly(b.birthDate)
-      return (dateA?.getDate() || 0) - (dateB?.getDate() || 0)
-    })
+  return birthdays.value.sort((a, b) => {
+    const dateA = fromDateOnly(a.birthDate)
+    const dateB = fromDateOnly(b.birthDate)
+    return (dateA?.getDate() || 0) - (dateB?.getDate() || 0)
+  })
 })
 
 const isHoje = (date) => {
@@ -143,8 +137,12 @@ const exportBirthdays = async () => {
   await exportAniversariantesPDF(aniversariantesMes.value)
 }
 
-onMounted(() => {
-  usersStore.fetchUsers()
+onMounted(async () => {
+  try {
+    birthdays.value = await authStore.getBirthdays()
+  } catch (error) {
+    console.error("Erro ao carregar aniversariantes:", error)
+  }
 })
 </script>
 

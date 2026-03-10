@@ -21,7 +21,7 @@
 
     <!-- Desktop Menu Items -->
     <template v-slot:append>
-      <div class="d-none d-lg-flex align-center">
+      <div class="d-flex align-center">
         <!-- Notification Bell -->
         <v-menu :close-on-content-click="false">
           <template v-slot:activator="{ props }">
@@ -91,7 +91,7 @@
           target="_blank"
           variant="text"
           size="small"
-          class="text-caption opacity-90"
+          class="text-caption opacity-90 d-none d-lg-flex align-center"
         >
           <v-icon size="small" class="mr-1">{{ item.icon }}</v-icon>
           {{ item.text }}
@@ -105,10 +105,42 @@
           <v-icon size="small" class="mr-1">mdi-home</v-icon>
           INÍCIO
         </v-btn>
-        <v-divider vertical class="mx-2 opacity-30" />
+        <!-- <v-btn
+          @click="aniversariantesAberto = true"
+          variant="text"
+          size="small"
+          class="text-caption opacity-90"
+        >
+          <v-icon size="small" class="mr-1">mdi-cake-variant</v-icon>
+          ANIVERSARIANTES
+        </v-btn> -->
+        <v-divider vertical class="mx-1 opacity-30" />
+        <v-menu >
+          <template v-slot:activator="{ props }">
+            <v-btn
+              icon="mdi-dots-vertical"
+              v-bind="props"
+              variant="text"
+              class="d-flex d-lg-none"
+            />
+          </template>
+          <v-list>
+            <v-list-item
+              v-for="item in menuItems"
+              :key="item.text"
+              :href="item.link"
+              target="_blank"
+            >
+              <template v-slot:prepend>
+                <v-icon size="small">{{ item.icon }}</v-icon>
+              </template>
+              <v-list-item-title>{{ item.text }}</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </div> 
 
-       <v-menu>
+      <v-menu v-if="authStore.isAuthenticated">
         <template v-slot:activator="{ props }">
           <v-btn
             icon="mdi-dots-vertical"
@@ -126,9 +158,9 @@
             <template v-slot:prepend><v-icon>mdi-account-plus</v-icon></template>
             <v-list-item-title>Cadastrar usuário</v-list-item-title>
           </v-list-item>
-          <v-list-item v-if="isAdmin && !isSecretariaAdmin" @click="resetAberto = true">
+          <v-list-item @click="resetAberto = true">
             <template v-slot:prepend><v-icon>mdi-lock-reset</v-icon></template>
-            <v-list-item-title>Redefinir senha</v-list-item-title>
+            <v-list-item-title>Alterar minha senha</v-list-item-title>
           </v-list-item>
           <v-divider />
           <v-list-item @click="logout">
@@ -137,11 +169,15 @@
           </v-list-item>
         </v-list>
       </v-menu>
+      <v-btn v-else to="/login" variant="elevated" color="white" class="text-senai-red font-weight-bold mx-2">
+        ENTRAR
+      </v-btn>
     </template>
 
     <!-- Modals -->
     <UserRegistrationModal v-model="cadastroAberto" @registered="onRegistered" />
     <PasswordResetModal v-model="resetAberto" />
+    <BirthdayModal v-model="aniversariantesAberto" />
   </v-app-bar>
 </template>
 
@@ -154,6 +190,7 @@ import { useNotificationStore } from '@/store/notifications'
 // Subcomponents
 import UserRegistrationModal from './UserRegistrationModal.vue'
 import PasswordResetModal from './PasswordResetModal.vue'
+import BirthdayModal from './BirthdayModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -214,14 +251,14 @@ const formattedDate = computed(() => {
 })
 
 const menuItems = [
-  { text: 'INTRANET', icon: 'mdi-web', link: 'http://intranet568.sp.senai.br/' },
+  // { text: 'INTRANET', icon: 'mdi-web', link: 'http://intranet568.sp.senai.br/' },
   { text: 'Diário FIC', icon: 'mdi-school', link: 'https://diariofic.sp.senai.br/' },
   { text: 'PORTAL EDU', icon: 'mdi-school', link: 'https://pess.sesisenaispedu.org.br/' },
   { text: 'RH SAP', icon: 'mdi-account-group', link: 'https://portalrh.sesisenaisp.org.br/arte/' },
   { text: 'GED', icon: 'mdi-file-document', link: 'https://sesisenaisp.sharepoint.com/sites/NovaGED' },
   { text: 'OUTLOOK', icon: 'mdi-email', link: 'https://mail.sesisenaisp.org.br/' },
   { text: 'SGSET', icon: 'mdi-cog', link: 'https://sgset.sp.senai.br/' },
-  { text: 'EMPREGRA+', icon: 'mdi-briefcase', link: 'https://www.senaipr.org.br/' },
+  { text: 'EMPREGRA+', icon: 'mdi-briefcase', link: 'https://www.senaipr.org.br/' }
 ]
 
 const goHome = () => router.push('/home')
@@ -233,6 +270,7 @@ const logout = () => {
 
 const cadastroAberto = ref(false)
 const resetAberto = ref(false)
+const aniversariantesAberto = ref(false)
 
 const onRegistered = () => {
   alert("Usuário cadastrado com sucesso!")

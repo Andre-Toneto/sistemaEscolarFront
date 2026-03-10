@@ -4,9 +4,14 @@
     <v-card color="senai-red" theme="dark" elevation="8" rounded="lg" class="mb-6">
       <v-card-text class="pa-4">
         <v-row align="center">
-          <v-col cols="12" md="8">
-            <h1 class="text-h4 font-weight-light mb-2">Mapa de Sala</h1>
-            <p class="text-body-1 font-weight-light opacity-80">Visualize e reserve salas por período</p>
+          <v-col cols="12" md="7">
+            <div class="d-flex align-center itens-center">
+              <h1 class="text-h4 font-weight-light ">Mapa de Sala</h1>
+              <v-btn color="#ffcc3e" variant="elevated" prepend-icon="mdi-chart-bar" size="small" class="ml-2" @click="goToBI()">
+                BI
+              </v-btn>
+            </div>
+            <p class="text-body-1 font-weight-light opacity-80 mt-1">Visualize e reserve salas por período</p>
           </v-col>
           <v-col cols="12" md="4" class="text-right text-center-md">
             <v-btn-toggle v-model="modo" color="white" rounded="xl" class="bg-white" mandatory>
@@ -631,7 +636,10 @@ import { useUsersStore } from '@/store/users'
 import * as carometroService from '@/services/carometro.services'
 import { toDateOnly, weekDaysMonSat, monthMatrix, startOfWeekMonday } from '@/utils/dateUtils'
 import { stringToColor } from '@/utils/colorUtils'
+import { routerKey } from 'vue-router'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const store = useMapaSalaStore()
 const authStore = useAuthStore()
 const carometroStore = useCarometroStore()
@@ -839,6 +847,8 @@ const confirmDialog = reactive({
   icon: 'mdi-help-circle',
   action: () => {}
 })
+
+const goToBI = () => {router.push('/mapa-sala-bi')}
 
 const abrirConfirmacao = (title, message, action, color = 'primary', icon = 'mdi-help-circle') => {
   confirmDialog.title = title

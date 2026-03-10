@@ -4,9 +4,8 @@ import axios from "axios"
 const getBaseURL = () => {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
 
-  // Se estivermos em produção ou acessando via IP na rede, usamos o mesmo hostname mas na porta 3000
-  const { hostname, protocol } = window.location
-  return `${protocol}//${hostname}:3000`
+  // Ao usar proxy no Vite ou Nginx, podemos usar o caminho relativo
+  return "/api"
 }
 
 export const api = axios.create({

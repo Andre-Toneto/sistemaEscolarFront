@@ -53,11 +53,62 @@
               >
                 Entrar
               </v-btn>
+
+              <div class="text-center mt-4">
+                <v-btn variant="text" color="senai-red" @click="dialogEsqueciSenha = true">
+                  Esqueci minha senha
+                </v-btn>
+              </div>
             </v-form>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Dialog Esqueci Senha -->
+    <v-dialog v-model="dialogEsqueciSenha" max-width="400">
+      <v-card>
+        <v-card-title class="text-h5 pa-4">
+          Recuperar Senha
+        </v-card-title>
+        <v-card-text>
+          <p class="mb-4 text-body-2">
+            Informe seu e-mail de cadastro para receber uma nova senha provisória.
+          </p>
+          <v-form ref="esqueciSenhaFormRef" v-model="esqueciSenhaValid" @submit.prevent="handleForgot">
+            <v-text-field
+              v-model="emailRecuperacao"
+              label="E-mail"
+              variant="outlined"
+              density="comfortable"
+              prepend-inner-icon="mdi-email"
+              :rules="emailRules"
+              required
+            />
+
+            <v-alert v-if="successMsg" type="success" variant="tonal" class="mb-4">
+              {{ successMsg }}
+            </v-alert>
+            <v-alert v-if="forgotError" type="error" variant="tonal" class="mb-4">
+              {{ forgotError }}
+            </v-alert>
+          </v-form>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer />
+          <v-btn variant="text" @click="dialogEsqueciSenha = false">Cancelar</v-btn>
+          <v-btn
+            color="senai-red"
+            variant="elevated"
+            :loading="loadingForgot"
+            :disabled="!esqueciSenhaValid"
+            @click="handleForgot"
+          >
+            Enviar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -81,9 +132,50 @@ const credentials = ref({
   senha: ''
 })
 
+// Forgot Password state
+const dialogEsqueciSenha = ref(false)
+const esqueciSenhaFormRef = ref(null)
+const esqueciSenhaValid = ref(false)
+const loadingForgot = ref(false)
+const emailRecuperacao = ref("")
+const successMsg = ref("")
+const forgotError = ref("")
+
 // Rules
 const registroRules = [v => !!v || 'Número de registro é obrigatório']
 const senhaRules = [v => !!v || 'Senha é obrigatória']
+const emailRules = [
+  v => !!v || 'E-mail é obrigatório',
+  v => /.+@.+\..+/.test(v) || 'E-mail deve ser válido'
+]
+
+async function handleForgot() {
+  if (!esqueciSenhaValid.value) return
+
+  try {
+    loadingForgot.value = true
+    forgotError.value = ""
+    successMsg.value = ""
+
+    const response = await authStore.forgotPassword(emailRecuperacao.value)
+
+    successMsg.value = response?.message || "Uma nova senha provisória foi enviada para o seu e-mail."
+    setTimeout(() => {
+      if (successMsg.value.includes("nova senha provisória é:")) {
+        // Se a senha foi mostrada na tela (falha de email), damos mais tempo para o usuário ler
+        return
+      }
+      dialogEsqueciSenha.value = false
+      successMsg.value = ""
+      emailRecuperacao.value = ""
+    }, 6000)
+  } catch (err) {
+    console.error('Erro ao recuperar senha:', err)
+    forgotError.value = err.response?.data?.message || "Erro ao solicitar recuperação de senha"
+  } finally {
+    loadingForgot.value = false
+  }
+}
 
 async function handleLogin() {
   if (!loginFormValid.value) return

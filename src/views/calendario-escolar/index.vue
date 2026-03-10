@@ -22,7 +22,6 @@
     </v-card>
 
     <!-- Content -->
-    <v-main class="flex-grow-1 bg-grey-lighten-4 position-relative">
       <div v-if="loading" class="fill-height d-flex flex-column align-center justify-center">
         <v-progress-circular indeterminate color="senai-red" size="64" width="6" />
         <p class="mt-4 text-h6 text-grey-darken-1">Carregando calendário...</p>
@@ -35,7 +34,7 @@
           width="100%"
           height="100%"
           style="border:none;"
-          class="calendar-iframe"
+          class="ma-0"
         ></iframe>
 
         <v-container v-else class="fill-height d-flex align-center justify-center">
@@ -47,7 +46,6 @@
           />
         </v-container>
       </template>
-    </v-main>
 
     <!-- Upload Modal -->
     <v-dialog v-model="modalUpload" max-width="500">
